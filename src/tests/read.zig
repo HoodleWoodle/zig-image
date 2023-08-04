@@ -7,7 +7,7 @@ fn readTestImage(relative_path: []const u8) !Image {
     defer file.close();
 
     const buffer: []const u8 = try file.reader().readAllAlloc(std.testing.allocator, 1024);
-    defer std.testing.allocator.destroy(buffer.ptr);
+    defer std.testing.allocator.free(buffer);
 
     var stream = StreamSource{ .const_buffer = std.io.fixedBufferStream(buffer) };
     return Image.init(std.testing.allocator, &stream);

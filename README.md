@@ -4,7 +4,7 @@ This is a library (WIP) to create, process, read and write different image forma
 
 ## Install & Build
 
-This library assumes Zig v0.10.1.
+This library assumes Zig v0.11.0.
 
 ## Supported image formats
 
