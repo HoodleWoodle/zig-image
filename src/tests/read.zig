@@ -1,6 +1,7 @@
 const std = @import("std");
-const Image = @import("../lib/image.zig");
 const StreamSource = std.io.StreamSource;
+const Image = @import("../lib/image.zig");
+const RBA32 = Image.RGBA32;
 
 fn readTestImage(relative_path: []const u8) !Image {
     var file = try std.fs.cwd().openFile(relative_path, .{});
@@ -13,16 +14,47 @@ fn readTestImage(relative_path: []const u8) !Image {
     return Image.init(std.testing.allocator, &stream);
 }
 
+fn expectRGBA32(image: Image, x: u32, y: u32, expected: RBA32) !void {
+    const actual = image.pixels[x + y * image.width];
+    std.testing.expect(actual.eql(expected)) catch |err| {
+        std.debug.print("At pixel ({},{}):\n", .{ x, y });
+        std.debug.print("\tactual:   {any}\n", .{actual});
+        std.debug.print("\texpected: {any}\n", .{expected});
+        return err;
+    };
+}
+
 fn testReadImage1x1Success(relative_path: []const u8) !void {
     var image = try readTestImage(relative_path);
     defer image.deinit();
 
     try std.testing.expect(image.width == 1);
     try std.testing.expect(image.height == 1);
-    try std.testing.expect(image.pixels[0].r == 0x44);
-    try std.testing.expect(image.pixels[0].g == 0xAA);
-    try std.testing.expect(image.pixels[0].b == 0x44);
-    try std.testing.expect(image.pixels[0].a == 0xFF);
+
+    try expectRGBA32(image, 0, 0, .{ .r = 0x44, .g = 0xAA, .b = 0x44 });
+}
+
+fn testReadImage8x4Success(relative_path: []const u8) !void {
+    var image = try readTestImage(relative_path);
+    defer image.deinit();
+
+    try std.testing.expect(image.width == 8);
+    try std.testing.expect(image.height == 4);
+
+    const C0 = .{ .r = 0xAC, .g = 0x32, .b = 0x32 };
+    const C1 = .{ .r = 0x63, .g = 0x9B, .b = 0xFF };
+    const C2 = .{ .r = 0x6A, .g = 0xBE, .b = 0x30 };
+    const C3 = .{ .a = 0x00 };
+    const C4 = .{ .r = 0xDF, .g = 0x21, .b = 0x26 };
+
+    try expectRGBA32(image, 0, 0, C0);
+    try expectRGBA32(image, 7, 0, C1);
+    try expectRGBA32(image, 2, 1, C0);
+    try expectRGBA32(image, 4, 1, C2);
+    try expectRGBA32(image, 3, 2, C3);
+    try expectRGBA32(image, 5, 2, C1);
+    try expectRGBA32(image, 0, 3, C4);
+    try expectRGBA32(image, 7, 3, C3);
 }
 
 fn testReadImageFailure(relative_path: []const u8, expected_error: Image.Error) !void {
@@ -34,8 +66,16 @@ test "reading simple PNG image" {
     try testReadImage1x1Success("images/test-1x1.png");
 }
 
+test "reading 8x4 PNG image" {
+    try testReadImage8x4Success("images/test-8x4.png");
+}
+
 test "reading simple BMP image" {
     try testReadImage1x1Success("images/test-1x1.bmp");
+}
+
+test "reading 8x4 BMP image" {
+    try testReadImage8x4Success("images/test-8x4.bmp");
 }
 
 test "reading unsupported image format" {
