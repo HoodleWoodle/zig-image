@@ -15,10 +15,28 @@ pub const Error = std.mem.Allocator.Error ||
 const Self = @This();
 
 pub const RGBA32 = packed struct {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    r: u8 = 0x00,
+    g: u8 = 0x00,
+    b: u8 = 0x00,
+    a: u8 = 0xFF,
+
+    pub fn eql(self: @This(), other: @This()) bool {
+        return self.r == other.r and self.g == other.g and self.b == other.b and self.a == other.a;
+    }
+
+    pub fn format(
+        self: @This(),
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        _ = options;
+
+        try writer.print("RGBA32{{ .r = 0x{x}, .g = 0x{x}, .b = 0x{x}, .a = 0x{x} }}", .{
+            self.r, self.g, self.b, self.a,
+        });
+    }
 };
 
 allocator: Allocator,
@@ -43,6 +61,6 @@ pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
     return Error.FormatUnkown;
 }
 
-pub fn deinit(self: *Self) void {
+pub fn deinit(self: *const Self) void {
     self.allocator.free(self.pixels);
 }
