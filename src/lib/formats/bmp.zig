@@ -121,7 +121,7 @@ const BitmapInfoHeader = packed struct {
         if (self.width <= 0) {
             return Error.BMPCorrupted;
         }
-        // TODO: CONSTRAINT: This field SHOULD specify the width of the decompressed image file, if the Compression value specifies JPEG or PNG format.
+        // CONSTRAINT: This field SHOULD specify the width of the decompressed image file, if the Compression value specifies JPEG or PNG format.
         // height
         if (self.height == 0) {
             return Error.BMPCorrupted;
@@ -132,7 +132,7 @@ const BitmapInfoHeader = packed struct {
         }
         // bit_count
         if (self.bit_count == .BI_BITCOUNT_0) {
-            return Error.BMPBitCountNotSupported; // TODO: IMPL: support bit_count option
+            return Error.BMPBitCountNotSupported; // IMPL: support bit_count option
         }
         if (self.bit_count == .BI_BITCOUNT_0 and !(self.compression == .BI_JPEG or self.compression == .BI_PNG)) {
             return Error.BMPCorrupted;
@@ -151,7 +151,7 @@ const BitmapInfoHeader = packed struct {
             return Error.BMPCompressionFormatNotSupported;
         }
         if (self.compression == .BI_RLE8 or self.compression == .BI_RLE4 or self.compression == .BI_JPEG or self.compression == .BI_PNG) {
-            return Error.BMPCompressionFormatNotSupported; // TODO: IMPL: support compression formats
+            return Error.BMPCompressionFormatNotSupported; // IMPL: support compression formats
         }
         if (self.compression == .BI_RLE8 and self.bit_count != .BI_BITCOUNT_3) {
             return Error.BMPCorrupted;
@@ -172,7 +172,7 @@ const BitmapInfoHeader = packed struct {
         //if (self.compression == .BI_RGB and self.image_size != 0) { // some implementations seem ignore this constraint
         //    return Error.BMPCorrupted;
         //}
-        // TODO: CONSTRAINT: If the Compression value is BI_JPEG or BI_PNG, this value MUST specify the size of the JPEG or PNG image buffer, respectively.
+        // CONSTRAINT: If the Compression value is BI_JPEG or BI_PNG, this value MUST specify the size of the JPEG or PNG image buffer, respectively.
     }
 };
 
@@ -213,31 +213,29 @@ const BitmapV3Header = packed struct {
 };
 
 const BitmapV4Header = packed struct {
-    color_space_type: LogicalColorSpace, // TODO: unused ?
-    endpoints: CIEXYZTripleObject, // TODO: unused ?
-    gamma_red: Placeholder_00000000nnnnnnnnffffffff00000000, // TODO: unused ?
-    gamma_green: Placeholder_00000000nnnnnnnnffffffff00000000, // TODO: unused ?
-    gamma_blue: Placeholder_00000000nnnnnnnnffffffff00000000, // TODO: unused ?
+    color_space_type: LogicalColorSpace, // unused
+    endpoints: CIEXYZTripleObject, // unused
+    gamma_red: Placeholder_00000000nnnnnnnnffffffff00000000, // unused
+    gamma_green: Placeholder_00000000nnnnnnnnffffffff00000000, // unused
+    gamma_blue: Placeholder_00000000nnnnnnnnffffffff00000000, // unused
 
     const Self = @This();
 
     fn check(self: *const Self) !void {
         _ = self;
-        return Error.BMPDIBHeaderNotSupported; // TODO: IMPL: BitmapV4Header
     }
 };
 
 const BitmapV5Header = packed struct {
-    intent: GamutMappingIntent, // TODO: unused ?
-    profile_data: u32, // TODO: unused ?
-    profile_size: u32, // TODO: unused ?
-    reserved: u32, // unused ?
+    intent: GamutMappingIntent, // unused
+    profile_data: u32, // unused
+    profile_size: u32, // unused
+    reserved: u32, // unused
 
     const Self = @This();
 
     fn check(self: *const Self) !void {
         _ = self;
-        return Error.BMPDIBHeaderNotSupported; // TODO: IMPL: BitmapV5Header
     }
 };
 
@@ -392,7 +390,6 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !Image {
     // DEBUG: }
 
     // colors
-    // TODO: IMPROVE: could be optimized by color_count = min(color_count, color_used) ?
     var color_table: [256]Image.RGBA32 = undefined;
     if (info_header.compression == .BI_RGB) {
         const color_count: usize = switch (info_header.bit_count) {

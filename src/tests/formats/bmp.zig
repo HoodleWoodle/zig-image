@@ -44,34 +44,3 @@ test "[BMP] reading: 8x4 (V1, BI_RGB, BI_BITCOUNT_5)" {
 test "[BMP] reading: 8x4 (V1, BI_RGB, BI_BITCOUNT_6)" {
     try tests.testReadImage8x4Success("images/test-8x4-rgb-6.bmp", .Default);
 }
-
-test "[BMP] reading: 8x4 (BI_RLE8)" {
-    // TODO: TEST: BI_RLE8
-    //try tests.testReadImageFailure("images/test-8x4-rle8.bmp", Image.Error.BMPCompressionFormatNotSupported);
-    //try tests.testReadImage8x4Success("images/test-8x4-rle8.bmp", .Default);
-    return error.SkipZigTest;
-}
-
-test "[BMP] reading: 8x4 (BI_RLE4)" {
-    // TODO: TEST: BI_RLE4
-    //try tests.testReadImageFailure("images/test-8x4-rle4.bmp", Image.Error.BMPCompressionFormatNotSupported);
-    //try tests.testReadImage8x4Success("images/test-8x4-rle4.bmp", .Default);
-    return error.SkipZigTest;
-}
-
-test "[BMP] reading: 8x4 (BI_JPEG)" {
-    // TODO: TEST: BI_JPEG
-    //try tests.testReadImageFailure("images/test-8x4-jpeg.bmp", Image.Error.BMPCompressionFormatNotSupported);
-    //try tests.testReadImage8x4Success("images/test-8x4-jpeg.bmp", .Default);
-    return error.SkipZigTest;
-}
-
-test "[BMP] reading: 8x4 (BI_PNG)" {
-    // TODO: TEST: BI_PNG
-    //try tests.testReadImageFailure("images/test-8x4-png.bmp", Image.Error.BMPCompressionFormatNotSupported);
-    //try tests.testReadImage8x4Success("images/test-8x4-png.bmp", .Alpha);
-    return error.SkipZigTest;
-}
-
-// TODO: TEST: V4 (sRGB?)
-// TODO: TEST: V5 (sRGB?)

@@ -10,7 +10,7 @@ This library assumes Zig v0.11.0.
 
 | Image Format  | Read          | Write          |
 | ------------- |:-------------:|:--------------:|
-| BMP           | ✔️ (WIP)      | ❌             |
+| BMP           | ✔️            | ❌             |
 | PNG           | ✔️ (Upcoming) | ❌             |
 
 ### BMP - Bitmap
@@ -22,17 +22,17 @@ This library assumes Zig v0.11.0.
 | BitmapInfoHeader  | ✔️            | ✔️             |
 | BitmapV2Header    | ❌            |                |
 | BitmapV3Header    | ✔️            | ✔️             |
-| BitmapV4Header    | ✔️            | ❌             |
-| BitmapV5Header    | ✔️            | ❌             |
+| BitmapV4Header    | ✔️            | ✔️             |
+| BitmapV5Header    | ✔️            | ✔️             |
 
 | Compression Format  | Supported     | Implemented    |
 | ------------------- |:-------------:|:--------------:|
 | BI_RGB              | ✔️            | ✔️             |
-| BI_RLE8             | ✔️            | ❌             |
-| BI_RLE4             | ✔️            | ❌             |
+| BI_RLE8             | ✔️            |                |
+| BI_RLE4             | ✔️            |                |
 | BI_BITFIELDS        | ✔️            | ✔️             |
-| BI_JPEG             | ✔️            | ❌             |
-| BI_PNG              | ✔️            | ❌             |
+| BI_JPEG             | ❌            |                |
+| BI_PNG              | ❌            |                |
 | BI_ALPHABITFIELDS   | ❌            |                |
 | BI_CMYK             | ❌            |                |
 | BI_CMYKRLE8         | ❌            |                |
