@@ -77,3 +77,64 @@ pub fn Indexed(comptime Col: type, comptime Idx: type) type {
         }
     };
 }
+
+pub const Format = enum {
+    indexed1,
+    indexed4,
+    indexed8,
+    rgba32f,
+    rgba32,
+    bgra32,
+    argb32,
+    abgr32,
+    rgb24,
+    bgr24,
+    argb4444,
+    argb1555,
+    rgb565,
+    rgb555,
+    a2r10g10b10,
+    a2b10g10r10,
+    grayscale1,
+    grayscale4,
+    grayscale8,
+
+    const Self = @This();
+
+    fn StorageType(comptime self: Self) type {
+        return switch (self) {
+            .indexed1 => Indexed1,
+            .indexed4 => Indexed4,
+            .indexed8 => Indexed8,
+            else => []self.ColorType(),
+        };
+    }
+
+    fn ColorType(comptime self: Self) type {
+        return switch (self) {
+            .indexed1 => self.StorageType().Color,
+            .indexed4 => self.StorageType().Color,
+            .indexed8 => self.StorageType().Color,
+            .rgba32f => color.RGBA32F,
+            .rgba32 => color.RGBA32,
+            .bgra32 => color.BGRA32,
+            .argb32 => color.ARGB32,
+            .abgr32 => color.ABGR32,
+            .rgb24 => color.RGB24,
+            .bgr24 => color.BGR24,
+            .argb4444 => color.ARGB4444,
+            .argb1555 => color.ARGB1555,
+            .rgb565 => color.RGB565,
+            .rgb555 => color.RGB555,
+            .a2r10g10b10 => color.A2R10G10B10,
+            .a2b10g10r10 => color.A2B10G10R10,
+            .grayscale1 => color.Grayscale1,
+            .grayscale4 => color.Grayscale4,
+            .grayscale8 => color.Grayscale8,
+        };
+    }
+
+    fn isConversionLossy(comptime self: Self, comptime from: Self) bool {
+        comptime return self.ColorType().isConversionLossy(from.ColorType());
+    }
+};
