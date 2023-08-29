@@ -138,3 +138,96 @@ pub const Format = enum {
         comptime return self.ColorType().isConversionLossy(from.ColorType());
     }
 };
+
+pub fn Storage(comptime format: Format) type {
+    return struct {
+        const Color = format.ColorType();
+        const Self = @This();
+
+        data: format.StorageType(),
+
+        pub fn init(pixel_count: usize, allocator: Allocator) !Self {
+            return .{ .data = try switch (format) {
+                .indexed1 => Indexed1.init(pixel_count, allocator),
+                .indexed4 => Indexed4.init(pixel_count, allocator),
+                .indexed8 => Indexed8.init(pixel_count, allocator),
+                else => allocator.alloc(Color, pixel_count),
+            } };
+        }
+
+        pub fn from(comptime from_format: Format, from_value: Storage(from_format), allocator: Allocator) !Self {
+            if (comptime format.isConversionLossy(from_format)) {
+                @compileError("Conversion from '" ++ @tagName(from_format) ++ "' to '" ++ @tagName(format) ++ "' is lossy! Use 'Storage.fromLossy' instead.");
+            }
+
+            return fromInternal(from_format, from_value, allocator);
+        }
+
+        pub fn fromLossy(comptime from_format: Format, from_value: Storage(from_format), allocator: Allocator) !Self {
+            if (comptime !format.isConversionLossy(from_format)) {
+                @compileError("Conversion from '" ++ @tagName(from_format) ++ "' to '" ++ @tagName(format) ++ "' is lossless! Use 'Storage.from' instead.");
+            }
+
+            return fromInternal(from_format, from_value, allocator);
+        }
+
+        fn fromInternal(comptime from_format: Format, from_value: Storage(from_format), allocator: Allocator) !Self {
+            const pixel_count = from_value.len();
+            var self = try init(pixel_count, allocator);
+
+            var i: u32 = 0;
+            while (i < pixel_count) : (i += 1) {
+                const pixel_src = try from_value.at(i);
+                const pixel_rst = Color.from(from_format.ColorType(), pixel_src);
+                try self.set(i, pixel_rst);
+            }
+
+            return self;
+        }
+
+        pub fn deinit(self: Self, allocator: Allocator) void {
+            switch (format) {
+                .indexed1 => self.data.deinit(allocator),
+                .indexed4 => self.data.deinit(allocator),
+                .indexed8 => self.data.deinit(allocator),
+                else => allocator.free(self.data),
+            }
+        }
+
+        pub fn len(self: Self) usize {
+            return switch (format) {
+                .indexed1 => self.data.indices.len,
+                .indexed4 => self.data.indices.len,
+                .indexed8 => self.data.indices.len,
+                else => self.data.len,
+            };
+        }
+
+        pub fn at(self: Self, pos: usize) !Color {
+            return switch (format) {
+                .indexed1 => try self.data.at(pos),
+                .indexed4 => try self.data.at(pos),
+                .indexed8 => try self.data.at(pos),
+                else => self.data[pos],
+            };
+        }
+
+        pub fn set(self: *Self, pos: usize, pixel: Color) !void {
+            return switch (format) {
+                .indexed1 => try self.data.set(pos, pixel),
+                .indexed4 => try self.data.set(pos, pixel),
+                .indexed8 => try self.data.set(pos, pixel),
+                else => self.data[pos] = pixel,
+            };
+        }
+
+        pub fn bytes(self: Self) []u8 {
+            return switch (format) {
+                .indexed1 => std.mem.sliceAsBytes(self.data.indices),
+                .indexed4 => std.mem.sliceAsBytes(self.data.indices),
+                .indexed8 => std.mem.sliceAsBytes(self.data.indices),
+                else => std.mem.sliceAsBytes(self.data),
+            };
+        }
+    };
+}
