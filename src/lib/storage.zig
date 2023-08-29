@@ -193,48 +193,482 @@ pub const Storage = union(Format) {
 
         var i: u32 = 0;
         while (i < pixel_count) : (i += 1) {
-            const intermediate = switch (from_value) {
-                .indexed1 => |data| color.RGBA32F.from(Format.ColorType(.indexed1), try data.at(i)),
-                .indexed4 => |data| color.RGBA32F.from(Format.ColorType(.indexed4), try data.at(i)),
-                .indexed8 => |data| color.RGBA32F.from(Format.ColorType(.indexed8), try data.at(i)),
-                .rgba32f => |data| color.RGBA32F.from(Format.ColorType(.rgba32f), data[i]),
-                .rgba32 => |data| color.RGBA32F.from(Format.ColorType(.rgba32), data[i]),
-                .bgra32 => |data| color.RGBA32F.from(Format.ColorType(.bgra32), data[i]),
-                .argb32 => |data| color.RGBA32F.from(Format.ColorType(.argb32), data[i]),
-                .abgr32 => |data| color.RGBA32F.from(Format.ColorType(.abgr32), data[i]),
-                .rgb24 => |data| color.RGBA32F.from(Format.ColorType(.rgb24), data[i]),
-                .bgr24 => |data| color.RGBA32F.from(Format.ColorType(.bgr24), data[i]),
-                .argb4444 => |data| color.RGBA32F.from(Format.ColorType(.argb4444), data[i]),
-                .argb1555 => |data| color.RGBA32F.from(Format.ColorType(.argb1555), data[i]),
-                .rgb565 => |data| color.RGBA32F.from(Format.ColorType(.rgb565), data[i]),
-                .rgb555 => |data| color.RGBA32F.from(Format.ColorType(.rgb555), data[i]),
-                .a2r10g10b10 => |data| color.RGBA32F.from(Format.ColorType(.a2r10g10b10), data[i]),
-                .a2b10g10r10 => |data| color.RGBA32F.from(Format.ColorType(.a2b10g10r10), data[i]),
-                .grayscale1 => |data| color.RGBA32F.from(Format.ColorType(.grayscale1), data[i]),
-                .grayscale4 => |data| color.RGBA32F.from(Format.ColorType(.grayscale4), data[i]),
-                .grayscale8 => |data| color.RGBA32F.from(Format.ColorType(.grayscale8), data[i]),
-            };
-
-            switch (self) {
-                .indexed1 => |*data| try data.set(i, intermediate),
-                .indexed4 => |*data| try data.set(i, intermediate),
-                .indexed8 => |*data| try data.set(i, intermediate),
-                .rgba32f => |data| data[i] = Format.ColorType(.rgba32f).from(color.RGBA32F, intermediate),
-                .rgba32 => |data| data[i] = Format.ColorType(.rgba32).from(color.RGBA32F, intermediate),
-                .bgra32 => |data| data[i] = Format.ColorType(.bgra32).from(color.RGBA32F, intermediate),
-                .argb32 => |data| data[i] = Format.ColorType(.argb32).from(color.RGBA32F, intermediate),
-                .abgr32 => |data| data[i] = Format.ColorType(.abgr32).from(color.RGBA32F, intermediate),
-                .rgb24 => |data| data[i] = Format.ColorType(.rgb24).from(color.RGBA32F, intermediate),
-                .bgr24 => |data| data[i] = Format.ColorType(.bgr24).from(color.RGBA32F, intermediate),
-                .argb4444 => |data| data[i] = Format.ColorType(.argb4444).from(color.RGBA32F, intermediate),
-                .argb1555 => |data| data[i] = Format.ColorType(.argb1555).from(color.RGBA32F, intermediate),
-                .rgb565 => |data| data[i] = Format.ColorType(.rgb565).from(color.RGBA32F, intermediate),
-                .rgb555 => |data| data[i] = Format.ColorType(.rgb555).from(color.RGBA32F, intermediate),
-                .a2r10g10b10 => |data| data[i] = Format.ColorType(.a2r10g10b10).from(color.RGBA32F, intermediate),
-                .a2b10g10r10 => |data| data[i] = Format.ColorType(.a2b10g10r10).from(color.RGBA32F, intermediate),
-                .grayscale1 => |data| data[i] = Format.ColorType(.grayscale1).from(color.RGBA32F, intermediate),
-                .grayscale4 => |data| data[i] = Format.ColorType(.grayscale4).from(color.RGBA32F, intermediate),
-                .grayscale8 => |data| data[i] = Format.ColorType(.grayscale8).from(color.RGBA32F, intermediate),
+            switch (from_value) {
+                .indexed1 => |data| {
+                    const From = Format.ColorType(.indexed1);
+                    const from_color = try data.at(i);
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .indexed4 => |data| {
+                    const From = Format.ColorType(.indexed4);
+                    const from_color = try data.at(i);
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .indexed8 => |data| {
+                    const From = Format.ColorType(.indexed8);
+                    const from_color = try data.at(i);
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .rgba32f => |data| {
+                    const From = Format.ColorType(.rgba32f);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .rgba32 => |data| {
+                    const From = Format.ColorType(.rgba32);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .bgra32 => |data| {
+                    const From = Format.ColorType(.bgra32);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .argb32 => |data| {
+                    const From = Format.ColorType(.argb32);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .abgr32 => |data| {
+                    const From = Format.ColorType(.abgr32);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .rgb24 => |data| {
+                    const From = Format.ColorType(.rgb24);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .bgr24 => |data| {
+                    const From = Format.ColorType(.bgr24);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .argb4444 => |data| {
+                    const From = Format.ColorType(.argb4444);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .argb1555 => |data| {
+                    const From = Format.ColorType(.argb1555);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .rgb565 => |data| {
+                    const From = Format.ColorType(.rgb565);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .rgb555 => |data| {
+                    const From = Format.ColorType(.rgb555);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .a2r10g10b10 => |data| {
+                    const From = Format.ColorType(.a2r10g10b10);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .a2b10g10r10 => |data| {
+                    const From = Format.ColorType(.a2b10g10r10);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .grayscale1 => |data| {
+                    const From = Format.ColorType(.grayscale1);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .grayscale4 => |data| {
+                    const From = Format.ColorType(.grayscale4);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
+                .grayscale8 => |data| {
+                    const From = Format.ColorType(.grayscale8);
+                    const from_color = data[i];
+                    switch (self) {
+                        .indexed1 => |*target| try target.set(i, Format.ColorType(.indexed1).from(From, from_color)),
+                        .indexed4 => |*target| try target.set(i, Format.ColorType(.indexed4).from(From, from_color)),
+                        .indexed8 => |*target| try target.set(i, Format.ColorType(.indexed8).from(From, from_color)),
+                        .rgba32f => |target| target[i] = Format.ColorType(.rgba32f).from(From, from_color),
+                        .rgba32 => |target| target[i] = Format.ColorType(.rgba32).from(From, from_color),
+                        .bgra32 => |target| target[i] = Format.ColorType(.bgra32).from(From, from_color),
+                        .argb32 => |target| target[i] = Format.ColorType(.argb32).from(From, from_color),
+                        .abgr32 => |target| target[i] = Format.ColorType(.abgr32).from(From, from_color),
+                        .rgb24 => |target| target[i] = Format.ColorType(.rgb24).from(From, from_color),
+                        .bgr24 => |target| target[i] = Format.ColorType(.bgr24).from(From, from_color),
+                        .argb4444 => |target| target[i] = Format.ColorType(.argb4444).from(From, from_color),
+                        .argb1555 => |target| target[i] = Format.ColorType(.argb1555).from(From, from_color),
+                        .rgb565 => |target| target[i] = Format.ColorType(.rgb565).from(From, from_color),
+                        .rgb555 => |target| target[i] = Format.ColorType(.rgb555).from(From, from_color),
+                        .a2r10g10b10 => |target| target[i] = Format.ColorType(.a2r10g10b10).from(From, from_color),
+                        .a2b10g10r10 => |target| target[i] = Format.ColorType(.a2b10g10r10).from(From, from_color),
+                        .grayscale1 => |target| target[i] = Format.ColorType(.grayscale1).from(From, from_color),
+                        .grayscale4 => |target| target[i] = Format.ColorType(.grayscale4).from(From, from_color),
+                        .grayscale8 => |target| target[i] = Format.ColorType(.grayscale8).from(From, from_color),
+                    }
+                },
             }
         }
 
