@@ -1,7 +1,9 @@
 const std = @import("std");
 
 pub const RGBA32F = RGBA(f32);
+pub const RGBA64F = RGBA(f64);
 pub const RGBA32 = RGBA(u8);
+pub const RGBA64 = RGBA(u16);
 
 pub fn RGBA(comptime T: type) type {
     return packed struct {
@@ -58,6 +60,7 @@ pub fn ABGR(comptime A: type, comptime T: type) type {
 }
 
 pub const RGB24 = RGB(u8, u8, u8);
+pub const RGB48 = RGB(u16, u16, u16);
 pub const RGB565 = RGB(u5, u6, u5);
 pub const RGB555 = RGB(u5, u5, u5);
 
@@ -84,8 +87,10 @@ pub fn BGR(comptime T: type) type {
 }
 
 pub const Grayscale1 = Grayscale(u1);
+pub const Grayscale2 = Grayscale(u2);
 pub const Grayscale4 = Grayscale(u4);
 pub const Grayscale8 = Grayscale(u8);
+pub const Grayscale16 = Grayscale(u16);
 
 pub fn Grayscale(comptime T: type) type {
     return packed struct {

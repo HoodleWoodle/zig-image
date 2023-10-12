@@ -2,9 +2,9 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const color = @import("color.zig");
 
-pub const Indexed1 = Indexed(color.RGBA32F, u1);
-pub const Indexed4 = Indexed(color.RGBA32F, u4);
-pub const Indexed8 = Indexed(color.RGBA32F, u8);
+pub const Indexed1 = Indexed(color.RGBA64F, u1);
+pub const Indexed4 = Indexed(color.RGBA64F, u4);
+pub const Indexed8 = Indexed(color.RGBA64F, u8);
 
 pub fn Indexed(comptime Col: type, comptime Idx: type) type {
     return struct {
@@ -82,11 +82,14 @@ pub const Format = enum {
     indexed1,
     indexed4,
     indexed8,
+    rgba64f,
     rgba32f,
+    rgba64,
     rgba32,
     bgra32,
     argb32,
     abgr32,
+    rgb48,
     rgb24,
     bgr24,
     argb4444,
@@ -96,8 +99,10 @@ pub const Format = enum {
     a2r10g10b10,
     a2b10g10r10,
     grayscale1,
+    grayscale2,
     grayscale4,
     grayscale8,
+    grayscale16,
 
     const Self = @This();
 
@@ -115,11 +120,14 @@ pub const Format = enum {
             .indexed1 => self.StorageType().Color,
             .indexed4 => self.StorageType().Color,
             .indexed8 => self.StorageType().Color,
+            .rgba64f => color.RGBA64F,
             .rgba32f => color.RGBA32F,
+            .rgba64 => color.RGBA64,
             .rgba32 => color.RGBA32,
             .bgra32 => color.BGRA32,
             .argb32 => color.ARGB32,
             .abgr32 => color.ABGR32,
+            .rgb48 => color.RGB48,
             .rgb24 => color.RGB24,
             .bgr24 => color.BGR24,
             .argb4444 => color.ARGB4444,
@@ -129,8 +137,10 @@ pub const Format = enum {
             .a2r10g10b10 => color.A2R10G10B10,
             .a2b10g10r10 => color.A2B10G10R10,
             .grayscale1 => color.Grayscale1,
+            .grayscale2 => color.Grayscale2,
             .grayscale4 => color.Grayscale4,
             .grayscale8 => color.Grayscale8,
+            .grayscale16 => color.Grayscale16,
         };
     }
 
@@ -236,11 +246,14 @@ pub const StorageRT = union(Format) {
     indexed1: Storage(.indexed1),
     indexed4: Storage(.indexed4),
     indexed8: Storage(.indexed8),
+    rgba64f: Storage(.rgba64f),
     rgba32f: Storage(.rgba32f),
+    rgba64: Storage(.rgba64),
     rgba32: Storage(.rgba32),
     bgra32: Storage(.bgra32),
     argb32: Storage(.argb32),
     abgr32: Storage(.abgr32),
+    rgb48: Storage(.rgb48),
     rgb24: Storage(.rgb24),
     bgr24: Storage(.bgr24),
     argb4444: Storage(.argb4444),
@@ -250,8 +263,10 @@ pub const StorageRT = union(Format) {
     a2r10g10b10: Storage(.a2r10g10b10),
     a2b10g10r10: Storage(.a2b10g10r10),
     grayscale1: Storage(.grayscale1),
+    grayscale2: Storage(.grayscale2),
     grayscale4: Storage(.grayscale4),
     grayscale8: Storage(.grayscale8),
+    grayscale16: Storage(.grayscale16),
 
     const Self = @This();
 
@@ -261,10 +276,13 @@ pub const StorageRT = union(Format) {
             .indexed4 => .{ .indexed4 = try Storage(.indexed4).init(pixel_count, allocator) },
             .indexed8 => .{ .indexed8 = try Storage(.indexed8).init(pixel_count, allocator) },
             .rgba32f => .{ .rgba32f = try Storage(.rgba32f).init(pixel_count, allocator) },
+            .rgba64f => .{ .rgba64f = try Storage(.rgba64f).init(pixel_count, allocator) },
+            .rgba64 => .{ .rgba64 = try Storage(.rgba64).init(pixel_count, allocator) },
             .rgba32 => .{ .rgba32 = try Storage(.rgba32).init(pixel_count, allocator) },
             .bgra32 => .{ .bgra32 = try Storage(.bgra32).init(pixel_count, allocator) },
             .argb32 => .{ .argb32 = try Storage(.argb32).init(pixel_count, allocator) },
             .abgr32 => .{ .abgr32 = try Storage(.abgr32).init(pixel_count, allocator) },
+            .rgb48 => .{ .rgb48 = try Storage(.rgb48).init(pixel_count, allocator) },
             .rgb24 => .{ .rgb24 = try Storage(.rgb24).init(pixel_count, allocator) },
             .bgr24 => .{ .bgr24 = try Storage(.bgr24).init(pixel_count, allocator) },
             .argb4444 => .{ .argb4444 = try Storage(.argb4444).init(pixel_count, allocator) },
@@ -274,8 +292,10 @@ pub const StorageRT = union(Format) {
             .a2r10g10b10 => .{ .a2r10g10b10 = try Storage(.a2r10g10b10).init(pixel_count, allocator) },
             .a2b10g10r10 => .{ .a2b10g10r10 = try Storage(.a2b10g10r10).init(pixel_count, allocator) },
             .grayscale1 => .{ .grayscale1 = try Storage(.grayscale1).init(pixel_count, allocator) },
+            .grayscale2 => .{ .grayscale2 = try Storage(.grayscale2).init(pixel_count, allocator) },
             .grayscale4 => .{ .grayscale4 = try Storage(.grayscale4).init(pixel_count, allocator) },
             .grayscale8 => .{ .grayscale8 = try Storage(.grayscale8).init(pixel_count, allocator) },
+            .grayscale16 => .{ .grayscale16 = try Storage(.grayscale16).init(pixel_count, allocator) },
         };
     }
 
@@ -287,47 +307,57 @@ pub const StorageRT = union(Format) {
         var i: u32 = 0;
         while (i < pixel_count) : (i += 1) {
             const intermediate = switch (from_value) {
-                .indexed1 => |data| color.RGBA32F.from(Format.ColorType(.indexed1), try data.at(i)),
-                .indexed4 => |data| color.RGBA32F.from(Format.ColorType(.indexed4), try data.at(i)),
-                .indexed8 => |data| color.RGBA32F.from(Format.ColorType(.indexed8), try data.at(i)),
-                .rgba32f => |data| color.RGBA32F.from(Format.ColorType(.rgba32f), try data.at(i)),
-                .rgba32 => |data| color.RGBA32F.from(Format.ColorType(.rgba32), try data.at(i)),
-                .bgra32 => |data| color.RGBA32F.from(Format.ColorType(.bgra32), try data.at(i)),
-                .argb32 => |data| color.RGBA32F.from(Format.ColorType(.argb32), try data.at(i)),
-                .abgr32 => |data| color.RGBA32F.from(Format.ColorType(.abgr32), try data.at(i)),
-                .rgb24 => |data| color.RGBA32F.from(Format.ColorType(.rgb24), try data.at(i)),
-                .bgr24 => |data| color.RGBA32F.from(Format.ColorType(.bgr24), try data.at(i)),
-                .argb4444 => |data| color.RGBA32F.from(Format.ColorType(.argb4444), try data.at(i)),
-                .argb1555 => |data| color.RGBA32F.from(Format.ColorType(.argb1555), try data.at(i)),
-                .rgb565 => |data| color.RGBA32F.from(Format.ColorType(.rgb565), try data.at(i)),
-                .rgb555 => |data| color.RGBA32F.from(Format.ColorType(.rgb555), try data.at(i)),
-                .a2r10g10b10 => |data| color.RGBA32F.from(Format.ColorType(.a2r10g10b10), try data.at(i)),
-                .a2b10g10r10 => |data| color.RGBA32F.from(Format.ColorType(.a2b10g10r10), try data.at(i)),
-                .grayscale1 => |data| color.RGBA32F.from(Format.ColorType(.grayscale1), try data.at(i)),
-                .grayscale4 => |data| color.RGBA32F.from(Format.ColorType(.grayscale4), try data.at(i)),
-                .grayscale8 => |data| color.RGBA32F.from(Format.ColorType(.grayscale8), try data.at(i)),
+                .indexed1 => |data| color.RGBA64F.from(Format.ColorType(.indexed1), try data.at(i)),
+                .indexed4 => |data| color.RGBA64F.from(Format.ColorType(.indexed4), try data.at(i)),
+                .indexed8 => |data| color.RGBA64F.from(Format.ColorType(.indexed8), try data.at(i)),
+                .rgba64f => |data| color.RGBA64F.from(Format.ColorType(.rgba64f), try data.at(i)),
+                .rgba32f => |data| color.RGBA64F.from(Format.ColorType(.rgba32f), try data.at(i)),
+                .rgba64 => |data| color.RGBA64F.from(Format.ColorType(.rgba64), try data.at(i)),
+                .rgba32 => |data| color.RGBA64F.from(Format.ColorType(.rgba32), try data.at(i)),
+                .bgra32 => |data| color.RGBA64F.from(Format.ColorType(.bgra32), try data.at(i)),
+                .argb32 => |data| color.RGBA64F.from(Format.ColorType(.argb32), try data.at(i)),
+                .abgr32 => |data| color.RGBA64F.from(Format.ColorType(.abgr32), try data.at(i)),
+                .rgb48 => |data| color.RGBA64F.from(Format.ColorType(.rgb48), try data.at(i)),
+                .rgb24 => |data| color.RGBA64F.from(Format.ColorType(.rgb24), try data.at(i)),
+                .bgr24 => |data| color.RGBA64F.from(Format.ColorType(.bgr24), try data.at(i)),
+                .argb4444 => |data| color.RGBA64F.from(Format.ColorType(.argb4444), try data.at(i)),
+                .argb1555 => |data| color.RGBA64F.from(Format.ColorType(.argb1555), try data.at(i)),
+                .rgb565 => |data| color.RGBA64F.from(Format.ColorType(.rgb565), try data.at(i)),
+                .rgb555 => |data| color.RGBA64F.from(Format.ColorType(.rgb555), try data.at(i)),
+                .a2r10g10b10 => |data| color.RGBA64F.from(Format.ColorType(.a2r10g10b10), try data.at(i)),
+                .a2b10g10r10 => |data| color.RGBA64F.from(Format.ColorType(.a2b10g10r10), try data.at(i)),
+                .grayscale1 => |data| color.RGBA64F.from(Format.ColorType(.grayscale1), try data.at(i)),
+                .grayscale2 => |data| color.RGBA64F.from(Format.ColorType(.grayscale2), try data.at(i)),
+                .grayscale4 => |data| color.RGBA64F.from(Format.ColorType(.grayscale4), try data.at(i)),
+                .grayscale8 => |data| color.RGBA64F.from(Format.ColorType(.grayscale8), try data.at(i)),
+                .grayscale16 => |data| color.RGBA64F.from(Format.ColorType(.grayscale16), try data.at(i)),
             };
 
             switch (self) {
                 .indexed1 => |*data| try data.set(i, intermediate),
                 .indexed4 => |*data| try data.set(i, intermediate),
                 .indexed8 => |*data| try data.set(i, intermediate),
-                .rgba32f => |*data| try data.set(i, Format.ColorType(.rgba32f).from(color.RGBA32F, intermediate)),
-                .rgba32 => |*data| try data.set(i, Format.ColorType(.rgba32).from(color.RGBA32F, intermediate)),
-                .bgra32 => |*data| try data.set(i, Format.ColorType(.bgra32).from(color.RGBA32F, intermediate)),
-                .argb32 => |*data| try data.set(i, Format.ColorType(.argb32).from(color.RGBA32F, intermediate)),
-                .abgr32 => |*data| try data.set(i, Format.ColorType(.abgr32).from(color.RGBA32F, intermediate)),
-                .rgb24 => |*data| try data.set(i, Format.ColorType(.rgb24).from(color.RGBA32F, intermediate)),
-                .bgr24 => |*data| try data.set(i, Format.ColorType(.bgr24).from(color.RGBA32F, intermediate)),
-                .argb4444 => |*data| try data.set(i, Format.ColorType(.argb4444).from(color.RGBA32F, intermediate)),
-                .argb1555 => |*data| try data.set(i, Format.ColorType(.argb1555).from(color.RGBA32F, intermediate)),
-                .rgb565 => |*data| try data.set(i, Format.ColorType(.rgb565).from(color.RGBA32F, intermediate)),
-                .rgb555 => |*data| try data.set(i, Format.ColorType(.rgb555).from(color.RGBA32F, intermediate)),
-                .a2r10g10b10 => |*data| try data.set(i, Format.ColorType(.a2r10g10b10).from(color.RGBA32F, intermediate)),
-                .a2b10g10r10 => |*data| try data.set(i, Format.ColorType(.a2b10g10r10).from(color.RGBA32F, intermediate)),
-                .grayscale1 => |*data| try data.set(i, Format.ColorType(.grayscale1).from(color.RGBA32F, intermediate)),
-                .grayscale4 => |*data| try data.set(i, Format.ColorType(.grayscale4).from(color.RGBA32F, intermediate)),
-                .grayscale8 => |*data| try data.set(i, Format.ColorType(.grayscale8).from(color.RGBA32F, intermediate)),
+                .rgba64f => |*data| try data.set(i, Format.ColorType(.rgba64f).from(color.RGBA64F, intermediate)),
+                .rgba32f => |*data| try data.set(i, Format.ColorType(.rgba32f).from(color.RGBA64F, intermediate)),
+                .rgba64 => |*data| try data.set(i, Format.ColorType(.rgba64).from(color.RGBA64F, intermediate)),
+                .rgba32 => |*data| try data.set(i, Format.ColorType(.rgba32).from(color.RGBA64F, intermediate)),
+                .bgra32 => |*data| try data.set(i, Format.ColorType(.bgra32).from(color.RGBA64F, intermediate)),
+                .argb32 => |*data| try data.set(i, Format.ColorType(.argb32).from(color.RGBA64F, intermediate)),
+                .abgr32 => |*data| try data.set(i, Format.ColorType(.abgr32).from(color.RGBA64F, intermediate)),
+                .rgb48 => |*data| try data.set(i, Format.ColorType(.rgb48).from(color.RGBA64F, intermediate)),
+                .rgb24 => |*data| try data.set(i, Format.ColorType(.rgb24).from(color.RGBA64F, intermediate)),
+                .bgr24 => |*data| try data.set(i, Format.ColorType(.bgr24).from(color.RGBA64F, intermediate)),
+                .argb4444 => |*data| try data.set(i, Format.ColorType(.argb4444).from(color.RGBA64F, intermediate)),
+                .argb1555 => |*data| try data.set(i, Format.ColorType(.argb1555).from(color.RGBA64F, intermediate)),
+                .rgb565 => |*data| try data.set(i, Format.ColorType(.rgb565).from(color.RGBA64F, intermediate)),
+                .rgb555 => |*data| try data.set(i, Format.ColorType(.rgb555).from(color.RGBA64F, intermediate)),
+                .a2r10g10b10 => |*data| try data.set(i, Format.ColorType(.a2r10g10b10).from(color.RGBA64F, intermediate)),
+                .a2b10g10r10 => |*data| try data.set(i, Format.ColorType(.a2b10g10r10).from(color.RGBA64F, intermediate)),
+                .grayscale1 => |*data| try data.set(i, Format.ColorType(.grayscale1).from(color.RGBA64F, intermediate)),
+                .grayscale2 => |*data| try data.set(i, Format.ColorType(.grayscale2).from(color.RGBA64F, intermediate)),
+                .grayscale4 => |*data| try data.set(i, Format.ColorType(.grayscale4).from(color.RGBA64F, intermediate)),
+                .grayscale8 => |*data| try data.set(i, Format.ColorType(.grayscale8).from(color.RGBA64F, intermediate)),
+                .grayscale16 => |*data| try data.set(i, Format.ColorType(.grayscale16).from(color.RGBA64F, intermediate)),
             }
         }
 
@@ -339,11 +369,14 @@ pub const StorageRT = union(Format) {
             .indexed1 => |data| data.deinit(allocator),
             .indexed4 => |data| data.deinit(allocator),
             .indexed8 => |data| data.deinit(allocator),
+            .rgba64f => |data| data.deinit(allocator),
             .rgba32f => |data| data.deinit(allocator),
+            .rgba64 => |data| data.deinit(allocator),
             .rgba32 => |data| data.deinit(allocator),
             .bgra32 => |data| data.deinit(allocator),
             .argb32 => |data| data.deinit(allocator),
             .abgr32 => |data| data.deinit(allocator),
+            .rgb48 => |data| data.deinit(allocator),
             .rgb24 => |data| data.deinit(allocator),
             .bgr24 => |data| data.deinit(allocator),
             .argb4444 => |data| data.deinit(allocator),
@@ -353,8 +386,10 @@ pub const StorageRT = union(Format) {
             .a2r10g10b10 => |data| data.deinit(allocator),
             .a2b10g10r10 => |data| data.deinit(allocator),
             .grayscale1 => |data| data.deinit(allocator),
+            .grayscale2 => |data| data.deinit(allocator),
             .grayscale4 => |data| data.deinit(allocator),
             .grayscale8 => |data| data.deinit(allocator),
+            .grayscale16 => |data| data.deinit(allocator),
         }
     }
 
@@ -363,11 +398,14 @@ pub const StorageRT = union(Format) {
             .indexed1 => .indexed1,
             .indexed4 => .indexed4,
             .indexed8 => .indexed8,
+            .rgba64f => .rgba64f,
             .rgba32f => .rgba32f,
+            .rgba64 => .rgba64,
             .rgba32 => .rgba32,
             .bgra32 => .bgra32,
             .argb32 => .argb32,
             .abgr32 => .abgr32,
+            .rgb48 => .rgb48,
             .rgb24 => .rgb24,
             .bgr24 => .bgr24,
             .argb4444 => .argb4444,
@@ -377,8 +415,10 @@ pub const StorageRT = union(Format) {
             .a2r10g10b10 => .a2r10g10b10,
             .a2b10g10r10 => .a2b10g10r10,
             .grayscale1 => .grayscale1,
+            .grayscale2 => .grayscale2,
             .grayscale4 => .grayscale4,
             .grayscale8 => .grayscale8,
+            .grayscale16 => .grayscale16,
         };
     }
 
@@ -387,11 +427,14 @@ pub const StorageRT = union(Format) {
             .indexed1 => |data| data.len(),
             .indexed4 => |data| data.len(),
             .indexed8 => |data| data.len(),
+            .rgba64f => |data| data.len(),
             .rgba32f => |data| data.len(),
+            .rgba64 => |data| data.len(),
             .rgba32 => |data| data.len(),
             .bgra32 => |data| data.len(),
             .argb32 => |data| data.len(),
             .abgr32 => |data| data.len(),
+            .rgb48 => |data| data.len(),
             .rgb24 => |data| data.len(),
             .bgr24 => |data| data.len(),
             .argb4444 => |data| data.len(),
@@ -401,8 +444,10 @@ pub const StorageRT = union(Format) {
             .a2r10g10b10 => |data| data.len(),
             .a2b10g10r10 => |data| data.len(),
             .grayscale1 => |data| data.len(),
+            .grayscale2 => |data| data.len(),
             .grayscale4 => |data| data.len(),
             .grayscale8 => |data| data.len(),
+            .grayscale16 => |data| data.len(),
         };
     }
 
@@ -411,11 +456,14 @@ pub const StorageRT = union(Format) {
             .indexed1 => |data| data.bytes(),
             .indexed4 => |data| data.bytes(),
             .indexed8 => |data| data.bytes(),
+            .rgba64f => |data| data.bytes(),
             .rgba32f => |data| data.bytes(),
+            .rgba64 => |data| data.bytes(),
             .rgba32 => |data| data.bytes(),
             .bgra32 => |data| data.bytes(),
             .argb32 => |data| data.bytes(),
             .abgr32 => |data| data.bytes(),
+            .rgb48 => |data| data.bytes(),
             .rgb24 => |data| data.bytes(),
             .bgr24 => |data| data.bytes(),
             .argb4444 => |data| data.bytes(),
@@ -425,8 +473,10 @@ pub const StorageRT = union(Format) {
             .a2r10g10b10 => |data| data.bytes(),
             .a2b10g10r10 => |data| data.bytes(),
             .grayscale1 => |data| data.bytes(),
+            .grayscale2 => |data| data.bytes(),
             .grayscale4 => |data| data.bytes(),
             .grayscale8 => |data| data.bytes(),
+            .grayscale16 => |data| data.bytes(),
         };
     }
 };

@@ -135,11 +135,14 @@ pub fn tmpPrintPixelsRT(s: PixelStorageRT) void {
     var i: u32 = 0;
     while (i < s.len()) : (i += 1) {
         switch (s) {
+            .rgba64f => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .rgba32f => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
+            .rgba64 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .rgba32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .bgra32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .argb32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .abgr32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
+            .rgb48 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .rgb24 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .bgr24 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .argb4444 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
@@ -149,8 +152,10 @@ pub fn tmpPrintPixelsRT(s: PixelStorageRT) void {
             .a2r10g10b10 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .a2b10g10r10 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .grayscale1 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
+            .grayscale2 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .grayscale4 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .grayscale8 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
+            .grayscale16 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .indexed1 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .indexed4 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .indexed8 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
