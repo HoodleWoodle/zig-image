@@ -6,61 +6,72 @@ const png = @import("formats/png.zig");
 const bmp = @import("formats/bmp.zig");
 const ico = @import("formats/ico.zig");
 
+const storage = @import("storage.zig");
+const PixelFormat = storage.Format;
+const PixelStorageCT = storage.StorageCT;
+const PixelStorageRT = storage.StorageRT;
+
 pub const Error = std.mem.Allocator.Error ||
     error{InvalidValue} ||
     error{EndOfStream} || StreamSource.SeekError || StreamSource.GetSeekPosError || StreamSource.ReadError ||
     error{ FormatNotSupported, FormatUnkown } ||
+    storage.StorageError ||
     png.Error || bmp.Error;
 
-const Self = @This();
+pub fn ImageCT(comptime format: PixelFormat) type {
+    return struct {
+        const Self = @This();
 
-pub const RGBA32 = packed struct {
-    r: u8 = 0x00,
-    g: u8 = 0x00,
-    b: u8 = 0x00,
-    a: u8 = 0xFF,
+        pub const Storage = PixelStorageCT(format);
 
-    pub fn eql(self: @This(), other: @This()) bool {
-        return self.r == other.r and self.g == other.g and self.b == other.b and self.a == other.a;
+        allocator: Allocator,
+        width: u32,
+        height: u32,
+        pixels: Storage,
+
+        pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
+            const image_rt = try ImageRT.init(allocator, stream);
+            defer image_rt.deinit();
+            return .{
+                .allocator = allocator,
+                .width = image_rt.width,
+                .height = image_rt.height,
+                .pixels = try Storage.fromRT(image_rt.pixels, allocator),
+            };
+        }
+
+        pub fn deinit(self: *const Self) void {
+            self.pixels.deinit(self.allocator);
+        }
+    };
+}
+
+pub const ImageRT = struct {
+    const Self = @This();
+
+    allocator: Allocator,
+    width: u32,
+    height: u32,
+    pixels: PixelStorageRT,
+
+    pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
+        if (try png.is_format(stream)) {
+            try stream.seekTo(0);
+            return png.init(allocator, stream);
+        }
+        try stream.seekTo(0);
+        if (try bmp.is_format(stream)) {
+            try stream.seekTo(0);
+            return bmp.init(allocator, stream);
+        }
+        try stream.seekTo(0);
+        if (try ico.is_format(stream)) {
+            return Error.FormatNotSupported;
+        }
+        return Error.FormatUnkown;
     }
 
-    pub fn format(
-        self: @This(),
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
-    ) !void {
-        _ = fmt;
-        _ = options;
-
-        try writer.print("RGBA32{{ .r = 0x{x}, .g = 0x{x}, .b = 0x{x}, .a = 0x{x} }}", .{
-            self.r, self.g, self.b, self.a,
-        });
+    pub fn deinit(self: *const Self) void {
+        self.pixels.deinit(self.allocator);
     }
 };
-
-allocator: Allocator,
-width: u32,
-height: u32,
-pixels: []RGBA32,
-
-pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
-    if (try png.is_format(stream)) {
-        try stream.seekTo(0);
-        return png.init(allocator, stream);
-    }
-    try stream.seekTo(0);
-    if (try bmp.is_format(stream)) {
-        try stream.seekTo(0);
-        return bmp.init(allocator, stream);
-    }
-    try stream.seekTo(0);
-    if (try ico.is_format(stream)) {
-        return Error.FormatNotSupported;
-    }
-    return Error.FormatUnkown;
-}
-
-pub fn deinit(self: *const Self) void {
-    self.allocator.free(self.pixels);
-}

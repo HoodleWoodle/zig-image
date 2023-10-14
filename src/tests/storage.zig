@@ -1,18 +1,18 @@
 const std = @import("std");
-const color = @import("../lib/color.zig");
-const storage = @import("../lib/storage.zig");
-const StorageFormat = storage.Format;
-const PixelStorage = storage.Storage;
-const PixelStorageRT = storage.StorageRT;
+const zimg = @import("../lib/zig-image.zig");
+const color = zimg.color;
+const PixelFormat = zimg.PixelFormat;
+const PixelStorageCT = zimg.PixelStorageCT;
+const PixelStorage = zimg.PixelStorage;
 
 // TODO: TEST: storage
 test "example:" {
-    const PixelStorageRGB555 = PixelStorage(StorageFormat.rgb555);
-    const PixelStorageBGRA32 = PixelStorage(StorageFormat.bgra32);
-    const PixelStorageIndexed4 = PixelStorage(StorageFormat.indexed4);
-    const PixelStorageGrayscale1 = PixelStorage(StorageFormat.grayscale1);
-    const PixelStorageRGBA32F = PixelStorage(StorageFormat.rgba32f);
-    const PixelStorageIndexed1 = PixelStorage(StorageFormat.indexed1);
+    const PixelStorageRGB555 = PixelStorageCT(PixelFormat.rgb555);
+    const PixelStorageBGRA32 = PixelStorageCT(PixelFormat.bgra32);
+    const PixelStorageIndexed4 = PixelStorageCT(PixelFormat.indexed4);
+    const PixelStorageGrayscale1 = PixelStorageCT(PixelFormat.grayscale1);
+    const PixelStorageRGBA32F = PixelStorageCT(PixelFormat.rgba32f);
+    const PixelStorageIndexed1 = PixelStorageCT(PixelFormat.indexed1);
 
     std.debug.print("----------------------------------\n", .{});
     {
@@ -27,17 +27,17 @@ test "example:" {
         tmpPrintPixels(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageBGRA32.from(StorageFormat.rgb555, s, std.testing.allocator);
+        const s2 = try PixelStorageBGRA32.from(PixelFormat.rgb555, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixels(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageIndexed4.from(StorageFormat.bgra32, s2, std.testing.allocator);
+        const s3 = try PixelStorageIndexed4.from(PixelFormat.bgra32, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixels(s3);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s4 = try PixelStorageGrayscale1.fromLossy(StorageFormat.indexed4, s3, std.testing.allocator);
+        const s4 = try PixelStorageGrayscale1.fromLossy(PixelFormat.indexed4, s3, std.testing.allocator);
         defer s4.deinit(std.testing.allocator);
         tmpPrintPixels(s4);
     }
@@ -54,12 +54,12 @@ test "example:" {
         tmpPrintPixels(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageRGBA32F.from(StorageFormat.grayscale1, s, std.testing.allocator);
+        const s2 = try PixelStorageRGBA32F.from(PixelFormat.grayscale1, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixels(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageIndexed1.from(StorageFormat.rgba32f, s2, std.testing.allocator);
+        const s3 = try PixelStorageIndexed1.from(PixelFormat.rgba32f, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixels(s3);
     }
@@ -82,7 +82,7 @@ pub fn tmpPrintPixels(s: anytype) void {
 test "exampleRT:" {
     std.debug.print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n", .{});
     {
-        var s = try PixelStorageRT.init(StorageFormat.rgb555, 4, std.testing.allocator);
+        var s = try PixelStorage.init(PixelFormat.rgb555, 4, std.testing.allocator);
         defer s.deinit(std.testing.allocator);
         try s.rgb555.set(0, color.RGB555.init(1, 2, 4));
         try s.rgb555.set(1, color.RGB555.init(8, 16, 3));
@@ -93,23 +93,23 @@ test "exampleRT:" {
         tmpPrintPixelsRT(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageRT.from(StorageFormat.bgra32, s, std.testing.allocator);
+        const s2 = try PixelStorage.from(PixelFormat.bgra32, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageRT.from(StorageFormat.indexed4, s2, std.testing.allocator);
+        const s3 = try PixelStorage.from(PixelFormat.indexed4, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s3);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s4 = try PixelStorageRT.from(StorageFormat.grayscale1, s3, std.testing.allocator);
+        const s4 = try PixelStorage.from(PixelFormat.grayscale1, s3, std.testing.allocator);
         defer s4.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s4);
     }
     std.debug.print("----------------------------------\n", .{});
     {
-        var s = try PixelStorageRT.init(StorageFormat.grayscale1, 16, std.testing.allocator);
+        var s = try PixelStorage.init(PixelFormat.grayscale1, 16, std.testing.allocator);
         defer s.deinit(std.testing.allocator);
         var i: u32 = 0;
         while (i < 16) : (i += 1) {
@@ -120,18 +120,18 @@ test "exampleRT:" {
         tmpPrintPixelsRT(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageRT.from(StorageFormat.rgba32f, s, std.testing.allocator);
+        const s2 = try PixelStorage.from(PixelFormat.rgba32f, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageRT.from(StorageFormat.indexed1, s2, std.testing.allocator);
+        const s3 = try PixelStorage.from(PixelFormat.indexed1, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s3);
     }
 }
 
-pub fn tmpPrintPixelsRT(s: PixelStorageRT) void {
+pub fn tmpPrintPixelsRT(s: PixelStorage) void {
     var i: u32 = 0;
     while (i < s.len()) : (i += 1) {
         switch (s) {

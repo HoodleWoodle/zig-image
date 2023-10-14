@@ -1,5 +1,6 @@
 const std = @import("std");
-const color = @import("../lib/color.zig");
+const zimg = @import("../lib/zig-image.zig");
+const color = zimg.color;
 
 // TODO: TEST: color
 test "example:" {
