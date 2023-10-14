@@ -2,7 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const StreamSource = std.io.StreamSource;
 
-const Image = @import("../image.zig");
+const Image = @import("../image.zig").ImageRT;
 
 pub const Error = error{BMPNotImplemented};
 
