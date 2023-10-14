@@ -1,5 +1,4 @@
-const tests = @import("../tests.zig");
-const Image = @import("../../lib/image.zig");
+const tests = @import("../common.zig");
 
 test "[BMP] reading: 1x1 (V3, BI_BITFIELDS, BI_BITCOUNT_6)" {
     try tests.testReadImage1x1Success("images/test-1x1.bmp");

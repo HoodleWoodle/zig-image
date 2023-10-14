@@ -1,5 +1,4 @@
-const tests = @import("../tests.zig");
-const Image = @import("../../lib/image.zig");
+const tests = @import("../common.zig");
 
 test "reading simple PNG image" {
     try tests.testReadImage1x1Success("images/test-1x1.png");
