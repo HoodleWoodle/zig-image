@@ -2,7 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const StreamSource = std.io.StreamSource;
 
-const Image = @import("../image.zig").ImageRT;
+const ImageRT = @import("../image.zig").ImageRT;
 
 pub const Error = error{PNGNotImplemented};
 
@@ -12,12 +12,19 @@ pub fn is_format(stream: *StreamSource) !bool {
     return stream.reader().isBytes(&file_signature);
 }
 
-pub fn init(allocator: Allocator, stream: *StreamSource) !Image {
+pub fn read(allocator: Allocator, stream: *StreamSource) !ImageRT {
     if (!try is_format(stream)) {
         unreachable;
     }
 
     _ = allocator;
+    // TODO: quirin
+    return Error.PNGNotImplemented;
+}
+
+pub fn write(image: ImageRT, writer: anytype) !void {
+    _ = image;
+    _ = writer;
     // TODO: quirin
     return Error.PNGNotImplemented;
 }

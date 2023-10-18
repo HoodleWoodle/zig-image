@@ -7,5 +7,6 @@ pub const PixelStorage = storage.StorageRT;
 
 const image = @import("image.zig");
 pub const ImageError = image.Error;
+pub const ImageFormat = image.Format;
 pub const ImageCT = image.ImageCT;
 pub const Image = image.ImageRT;

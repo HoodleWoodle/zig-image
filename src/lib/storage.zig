@@ -196,6 +196,7 @@ pub fn StorageCT(comptime format: Format) type {
         }
 
         pub fn fromRT(from_value: StorageRT, allocator: Allocator) !Self {
+            // TODO: IMPROVE: this function ALWAYS creates a copy - a 'move' alternative may be clever
             return switch (from_value) {
                 .indexed1 => |data| fromInternal(.indexed1, data, allocator),
                 .indexed4 => |data| fromInternal(.indexed4, data, allocator),
@@ -328,7 +329,6 @@ pub const StorageRT = union(Format) {
         };
     }
 
-    /// conversion may be lossy
     pub fn from(fmt: Format, from_value: StorageRT, allocator: Allocator) !Self {
         const pixel_count = from_value.len();
         var self = try init(fmt, pixel_count, allocator);
@@ -391,6 +391,36 @@ pub const StorageRT = union(Format) {
         }
 
         return self;
+    }
+
+    pub fn fromCTWrapped(comptime fmt: Format, from_value: StorageCT(fmt)) Self {
+        // TODO: IMPROVE: this function NEVER creates a copy - a 'owning' alternative may be clever
+        return switch (fmt) {
+            .indexed1 => .{ .indexed1 = from_value },
+            .indexed4 => .{ .indexed4 = from_value },
+            .indexed8 => .{ .indexed8 = from_value },
+            .rgba64f => .{ .rgba64f = from_value },
+            .rgba32f => .{ .rgba32f = from_value },
+            .rgba64 => .{ .rgba64 = from_value },
+            .rgba32 => .{ .rgba32 = from_value },
+            .bgra32 => .{ .bgra32 = from_value },
+            .argb32 => .{ .argb32 = from_value },
+            .abgr32 => .{ .abgr32 = from_value },
+            .rgb48 => .{ .rgb48 = from_value },
+            .rgb24 => .{ .rgb24 = from_value },
+            .bgr24 => .{ .bgr24 = from_value },
+            .argb4444 => .{ .argb4444 = from_value },
+            .argb1555 => .{ .argb1555 = from_value },
+            .rgb565 => .{ .rgb565 = from_value },
+            .rgb555 => .{ .rgb555 = from_value },
+            .a2r10g10b10 => .{ .a2r10g10b10 = from_value },
+            .a2b10g10r10 => .{ .a2b10g10r10 = from_value },
+            .grayscale1 => .{ .grayscale1 = from_value },
+            .grayscale2 => .{ .grayscale2 = from_value },
+            .grayscale4 => .{ .grayscale4 = from_value },
+            .grayscale8 => .{ .grayscale8 = from_value },
+            .grayscale16 => .{ .grayscale16 = from_value },
+        };
     }
 
     pub fn deinit(self: Self, allocator: Allocator) void {

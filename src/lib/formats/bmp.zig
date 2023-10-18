@@ -246,7 +246,7 @@ pub fn is_format(stream: *StreamSource) !bool {
     return stream.reader().isBytes(file_signature);
 }
 
-pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
+pub fn read(allocator: Allocator, stream: *StreamSource) !ImageRT {
     var reader = stream.reader();
     // DEBUG: std.debug.print("\n", .{});
 
@@ -527,7 +527,13 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
         }
     }
 
-    return .{ .allocator = allocator, .width = w, .height = h, .pixels = pixel_storage };
+    return .{ .allocator = allocator, .width = w, .height = h, .storage = pixel_storage };
+}
+
+pub fn write(image: ImageRT, writer: anytype) !void {
+    _ = image;
+    _ = writer;
+    // TODO: IMPL: stefan
 }
 
 fn extractRowIndexed(reader: anytype, comptime IndexedStorage: type, indexed_storage: *IndexedStorage, w: u32, y: u32) !u32 {
