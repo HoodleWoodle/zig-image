@@ -5,6 +5,7 @@ const RGBA32 = zimg.color.RGBA32;
 const Format = zimg.PixelFormat;
 const ImageError = zimg.ImageError;
 const Image = zimg.ImageCT(Format.rgba32);
+const ImageRT = zimg.Image;
 
 pub const TestImageColorization = enum { Default, Alpha, Mono };
 
@@ -15,7 +16,7 @@ const gray: RGBA32 = .{ .r = 0x5A, .g = 0x5A, .b = 0x5A, .a = 0xFF };
 const black: RGBA32 = .{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF };
 const white: RGBA32 = .{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
 
-fn readTestImage(relative_path: []const u8) !Image {
+fn readTestImage(comptime expected_format: Format, relative_path: []const u8) !Image {
     var file = try std.fs.cwd().openFile(relative_path, .{});
     defer file.close();
 
@@ -23,7 +24,17 @@ fn readTestImage(relative_path: []const u8) !Image {
     defer std.testing.allocator.free(buffer);
 
     var stream = StreamSource{ .const_buffer = std.io.fixedBufferStream(buffer) };
-    return Image.init(std.testing.allocator, &stream);
+    const image_rt = try ImageRT.init(std.testing.allocator, &stream);
+    defer image_rt.deinit();
+
+    try std.testing.expect(image_rt.pixels.format() == expected_format);
+
+    return Image{
+        .allocator = image_rt.allocator,
+        .width = image_rt.width,
+        .height = image_rt.height,
+        .pixels = try Image.Storage.fromRT(image_rt.pixels, image_rt.allocator),
+    };
 }
 
 fn expectRGBA32(image: Image, x: u32, y: u32, expected: RGBA32) !void {
@@ -36,8 +47,8 @@ fn expectRGBA32(image: Image, x: u32, y: u32, expected: RGBA32) !void {
     };
 }
 
-pub fn testReadImage1x1Success(relative_path: []const u8) !void {
-    var image = try readTestImage(relative_path);
+pub fn testReadImage1x1Success(comptime expected_format: Format, relative_path: []const u8) !void {
+    var image = try readTestImage(expected_format, relative_path);
     defer image.deinit();
 
     try std.testing.expect(image.width == 1);
@@ -46,8 +57,8 @@ pub fn testReadImage1x1Success(relative_path: []const u8) !void {
     try expectRGBA32(image, 0, 0, red);
 }
 
-pub fn testReadImage2x2Success(relative_path: []const u8) !void {
-    var image = try readTestImage(relative_path);
+pub fn testReadImage2x2Success(comptime expected_format: Format, relative_path: []const u8) !void {
+    var image = try readTestImage(expected_format, relative_path);
     defer image.deinit();
 
     try std.testing.expect(image.width == 2);
@@ -59,14 +70,14 @@ pub fn testReadImage2x2Success(relative_path: []const u8) !void {
     try expectRGBA32(image, 1, 1, white);
 }
 
-pub fn testReadImage8x4Success(relative_path: []const u8, comptime col: TestImageColorization) !void {
+pub fn testReadImage8x4Success(comptime expected_format: Format, relative_path: []const u8, comptime col: TestImageColorization) !void {
     const colors = switch (col) {
         .Default => .{ red, green, blue, gray, black },
         .Alpha => .{ red, green, blue, gray, .{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 0x00 } },
         .Mono => .{ white, white, white, white, black },
     };
 
-    var image = try readTestImage(relative_path);
+    var image = try readTestImage(expected_format, relative_path);
     defer image.deinit();
 
     try std.testing.expect(image.width == 8);
@@ -83,7 +94,7 @@ pub fn testReadImage8x4Success(relative_path: []const u8, comptime col: TestImag
 }
 
 pub fn testReadImageFailure(relative_path: []const u8, expected_error: ImageError) !void {
-    var image = readTestImage(relative_path);
+    var image = readTestImage(.grayscale1, relative_path); // expected format is not used
     try std.testing.expectError(expected_error, image);
 }
 

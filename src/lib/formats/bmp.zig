@@ -3,9 +3,11 @@ const Allocator = std.mem.Allocator;
 const StreamSource = std.io.StreamSource;
 const Endian = std.builtin.Endian;
 
-const RGBA32 = @import("../color.zig").RGBA32;
+const color = @import("../color.zig");
 const ImageRT = @import("../image.zig").ImageRT;
-const PixelStorageCT_RGBA32 = @import("../storage.zig").StorageCT(.rgba32);
+const storage = @import("../storage.zig");
+const PixelFormat = storage.Format;
+const PixelStorageRT = storage.StorageRT;
 
 pub const Error = error{ BMPDIBHeaderNotSupported, BMPCompressionFormatNotSupported, BMPBitCountNotSupported, BMPCorrupted };
 
@@ -16,7 +18,7 @@ const FileHeader = extern struct {
     bitmap_offset: u32, // unused
 };
 
-const GamutMappingIntent = enum(u32) {
+const GamutMappingIntent = enum(u32) { // not supported
     LCS_GM_BUSINESS = 1,
     LCS_GM_GRAPHICS = 2,
     LCS_GM_IMAGES = 4,
@@ -27,19 +29,19 @@ const GamutMappingIntent = enum(u32) {
 const Placeholder_nnffffffffffffffffffffffffffffff = u32;
 const Placeholder_00000000nnnnnnnnffffffff00000000 = u32;
 
-const CIEXYZObject = packed struct {
+const CIEXYZObject = packed struct { // not supported
     x: Placeholder_nnffffffffffffffffffffffffffffff,
     y: Placeholder_nnffffffffffffffffffffffffffffff,
     z: Placeholder_nnffffffffffffffffffffffffffffff,
 };
 
-const CIEXYZTripleObject = packed struct {
+const CIEXYZTripleObject = packed struct { // not supported
     red: CIEXYZObject,
     green: CIEXYZObject,
     blue: CIEXYZObject,
 };
 
-const LogicalColorSpace = enum(u32) {
+const LogicalColorSpace = enum(u32) { // not supported
     LCS_CALIBRATED_RGB = 0,
     LCS_sRGB = 0x73524742,
     LCS_WINDOWS_COLOR_SPACE = 0x57696E20,
@@ -49,15 +51,15 @@ const LogicalColorSpace = enum(u32) {
 
 const Compression = enum(u32) {
     BI_RGB = 0x0000,
-    BI_RLE8 = 0x0001,
-    BI_RLE4 = 0x0002,
+    BI_RLE8 = 0x0001, // not supported
+    BI_RLE4 = 0x0002, // not supported
     BI_BITFIELDS = 0x0003,
-    BI_JPEG = 0x0004,
-    BI_PNG = 0x0005,
+    BI_JPEG = 0x0004, // not supported
+    BI_PNG = 0x0005, // not supported
     BI_ALPHABITFIELDS = 0x0006, // not supported
-    BI_CMYK = 0x000B,
-    BI_CMYKRLE8 = 0x000C,
-    BI_CMYKRLE4 = 0x000D,
+    BI_CMYK = 0x000B, // not supported
+    BI_CMYKRLE8 = 0x000C, // not supported
+    BI_CMYKRLE4 = 0x000D, // not supported
 
     const Self = @This();
 
@@ -73,7 +75,7 @@ const Compression = enum(u32) {
 };
 
 const BitCount = enum(u16) {
-    BI_BITCOUNT_0 = 0x0000,
+    BI_BITCOUNT_0 = 0x0000, // not supported (JPG, PNG)
     BI_BITCOUNT_1 = 0x0001,
     BI_BITCOUNT_2 = 0x0004,
     BI_BITCOUNT_3 = 0x0008,
@@ -87,7 +89,7 @@ const HeaderSize = enum(u32) {
     OS22XBITMAPHEADER = 64, // not supported
     OS22XBITMAPHEADER_SMALL = 16, // not supported
     BitmapInfoHeader = 40,
-    BitmapV2Header = 52, // not supported
+    BitmapV2Header = 52, // not supported (without V3)
     BitmapV3Header = 56,
     BitmapV4Header = 108,
     BitmapV5Header = 124,
@@ -133,9 +135,6 @@ const BitmapInfoHeader = packed struct {
             return Error.BMPCorrupted;
         }
         // bit_count
-        if (self.bit_count == .BI_BITCOUNT_0) {
-            return Error.BMPBitCountNotSupported; // IMPL: support bit_count option
-        }
         if (self.bit_count == .BI_BITCOUNT_0 and !(self.compression == .BI_JPEG or self.compression == .BI_PNG)) {
             return Error.BMPCorrupted;
         }
@@ -149,10 +148,10 @@ const BitmapInfoHeader = packed struct {
         if (self.compression == .BI_ALPHABITFIELDS) {
             return Error.BMPCompressionFormatNotSupported;
         }
-        if (self.compression == .BI_CMYK or self.compression == .BI_CMYKRLE8 or self.compression == .BI_CMYKRLE4) {
+        if (self.compression == .BI_JPEG or self.compression == .BI_PNG or self.compression == .BI_CMYK or self.compression == .BI_CMYKRLE8 or self.compression == .BI_CMYKRLE4) {
             return Error.BMPCompressionFormatNotSupported;
         }
-        if (self.compression == .BI_RLE8 or self.compression == .BI_RLE4 or self.compression == .BI_JPEG or self.compression == .BI_PNG) {
+        if (self.compression == .BI_RLE8 or self.compression == .BI_RLE4) {
             return Error.BMPCompressionFormatNotSupported; // IMPL: support compression formats
         }
         if (self.compression == .BI_RLE8 and self.bit_count != .BI_BITCOUNT_3) {
@@ -319,15 +318,28 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
 
     // color masks
     //const MASK = enum(u32) { R, G, B, A };
-    const MASK_COUNT = 4;
+    const CHANNEL_COUNT = 4;
     const R = 0;
     const G = 1;
     const B = 2;
     const A = 3;
 
-    var masks: [MASK_COUNT]u32 = undefined;
-    switch (info_header.compression) {
-        .BI_BITFIELDS => {
+    const COLOR_MASKS_RGBA32 = [CHANNEL_COUNT]u32{ 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF };
+    const COLOR_MASKS_BGRA32 = [CHANNEL_COUNT]u32{ 0x0000FF00, 0x00FF0000, 0xFF000000, 0x000000FF };
+    const COLOR_MASKS_ARGB32 = [CHANNEL_COUNT]u32{ 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000 };
+    const COLOR_MASKS_ABGR32 = [CHANNEL_COUNT]u32{ 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000 };
+    const COLOR_MASKS_ARGB4444 = [CHANNEL_COUNT]u32{ 0x0F00, 0x00F0, 0x000F, 0xF000 };
+    const COLOR_MASKS_ARGB1555 = [CHANNEL_COUNT]u32{ 0x7C00, 0x03E0, 0x001F, 0x8000 };
+    const COLOR_MASKS_RGB565 = [CHANNEL_COUNT]u32{ 0xF800, 0x07E0, 0x001F, 0x0000 };
+    const COLOR_MASKS_RGB555 = [CHANNEL_COUNT]u32{ 0x7C00, 0x03E0, 0x001F, 0x0000 };
+    const COLOR_MASKS_A2R10G10B10 = [CHANNEL_COUNT]u32{ 0x3FF00000, 0x000FFC00, 0x000003FF, 0xC0000000 };
+    const COLOR_MASKS_A2B10G10R10 = [CHANNEL_COUNT]u32{ 0x000003FF, 0x000FFC00, 0x3FF00000, 0xC0000000 };
+    const COLOR_MASKS_RGB24 = [CHANNEL_COUNT]u32{ 0xFF000000, 0x00FF0000, 0x0000FF00, 0x00000000 };
+
+    const masks = switch (info_header.compression) {
+        .BI_BITFIELDS => blk: {
+            var masks: [CHANNEL_COUNT]u32 = [_]u32{ 0, 0, 0, 0 };
+
             if (v2_header) |header| {
                 masks[R] = header.red_mask;
                 masks[G] = header.green_mask;
@@ -341,60 +353,106 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
                 return Error.BMPCorrupted; // this may not be entirely true (BI_ALPHABITFIELDS)
             }
 
-            if (info_header.bit_count == .BI_BITCOUNT_4) { // this is unfortunatly just a conjecture...
-                var m: u32 = 0;
-                while (m < MASK_COUNT) : (m += 1) {
-                    masks[m] = ((masks[m] >> 8) & 0xFF00) | masks[m] >> 24;
-                }
-            }
+            break :blk masks;
         },
-        .BI_RGB => {
+        .BI_RGB => blk: {
             if (info_header.bit_count == .BI_BITCOUNT_4) {
-                // RGB555LE
-                masks[R] = 0b0111110000000000;
-                masks[G] = 0b0000001111100000;
-                masks[B] = 0b0000000000011111;
-                masks[A] = 0b0000000000000000;
+                break :blk COLOR_MASKS_RGB555;
             } else {
                 // used only with .BI_BITCOUNT_5 and .BI_BITCOUNT_6
-                masks[R] = 0x0000FF00;
-                masks[G] = 0x00FF0000;
-                masks[B] = 0xFF000000;
-                masks[A] = 0x00000000;
+                break :blk COLOR_MASKS_RGB24;
             }
         },
         else => unreachable,
-    }
+    };
 
-    var bit_counts = [MASK_COUNT]u5{ 0, 0, 0, 0 };
-    var bit_shifts = [MASK_COUNT]u5{ 0, 0, 0, 0 };
+    // DEBUG: std.debug.print("r-mask: 0x{x}\n", .{ masks[R] });
+    // DEBUG: std.debug.print("g-mask: 0x{x}\n", .{ masks[G] });
+    // DEBUG: std.debug.print("b-mask: 0x{x}\n", .{ masks[B] });
+    // DEBUG: std.debug.print("a-mask: 0x{x}\n", .{ masks[A] });
 
-    var was_set = [MASK_COUNT]bool{ false, false, false, false };
-    if (!is_indexed) {
-        var m: u32 = 0;
-        while (m < MASK_COUNT) : (m += 1) {
-            var b: u32 = 0;
-            while (b < @bitSizeOf(u32)) : (b += 1) {
-                const is_set = masks[m] & (@as(u32, 1) << std.math.cast(u5, b).?) != 0;
-                if (is_set) {
-                    bit_counts[m] += 1;
-                    was_set[m] = true;
-                } else if (!was_set[m]) {
-                    bit_shifts[m] +%= 1;
+    // format
+
+    //.indexed1      <==    has_color_table                  and BI_BITCOUNT_1
+    //.indexed4      <==    has_color_table                  and BI_BITCOUNT_2
+    //.indexed8      <==    has_color_table                  and BI_BITCOUNT_3
+    //.rgba32        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 <masks = .rgba32>
+    //.bgra32        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 <masks = .bgra32>
+    //.argb32        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 <masks = .argb32>
+    //.abgr32        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 <masks = .abgr32>
+    //.rgb24         <==   !has_color_table and BI_RGB       and BI_BITCOUNT_5
+    //                <=   !has_color_table and BI_RGB       and BI_BITCOUNT_6    // => .rgb24 but with padding ?
+    //.argb4444      <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_4 <masks = .argb4444>
+    //.argb1555      <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_4 <masks = .argb1555>
+    //.rgb565        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_4 <masks = .rgb565>
+    //.rgb555        <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_4 <masks = .rgb555>
+    //                <=   !has_color_table and BI_RGB       and BI_BITCOUNT_4
+    //.a2r10g10b10   <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 and <masks = .a2r10g10b10>
+    //.a2b10g10r10   <==   !has_color_table and BI_BITFIELDS and BI_BITCOUNT_6 and <masks = .a2b10g10r10>
+    //
+    // else: NOT SUPPORTED
+
+    var fmt: PixelFormat = undefined;
+    if (!has_color_table) {
+        switch (info_header.compression) {
+            .BI_BITFIELDS => {
+                switch (info_header.bit_count) {
+                    .BI_BITCOUNT_4 => {
+                        if (std.mem.eql(u32, &masks, &COLOR_MASKS_ARGB4444)) {
+                            fmt = .argb4444;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_ARGB1555)) {
+                            fmt = .argb1555;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_RGB565)) {
+                            fmt = .rgb565;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_RGB555)) {
+                            fmt = .rgb555;
+                        } else unreachable;
+                    },
+                    .BI_BITCOUNT_6 => {
+                        if (std.mem.eql(u32, &masks, &COLOR_MASKS_RGBA32)) {
+                            fmt = .rgba32;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_BGRA32)) {
+                            fmt = .bgra32;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_ARGB32)) {
+                            fmt = .argb32;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_ABGR32)) {
+                            fmt = .abgr32;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_A2R10G10B10)) {
+                            fmt = .a2r10g10b10;
+                        } else if (std.mem.eql(u32, &masks, &COLOR_MASKS_A2B10G10R10)) {
+                            fmt = .a2b10g10r10;
+                        } else unreachable;
+                    },
+                    else => unreachable,
                 }
-            }
+            },
+            .BI_RGB => {
+                switch (info_header.bit_count) {
+                    .BI_BITCOUNT_4 => fmt = .rgb555,
+                    .BI_BITCOUNT_5 => fmt = .rgb24,
+                    .BI_BITCOUNT_6 => fmt = .rgb24,
+                    else => unreachable,
+                }
+            },
+            else => unreachable,
+        }
+    } else {
+        std.debug.assert(is_indexed);
+        switch (info_header.bit_count) {
+            .BI_BITCOUNT_1 => fmt = .indexed1,
+            .BI_BITCOUNT_2 => fmt = .indexed4,
+            .BI_BITCOUNT_3 => fmt = .indexed8,
+            else => unreachable,
         }
     }
 
-    // DEBUG: var m: u32 = 0;
-    // DEBUG: while (m < MASK_COUNT) : (m += 1) {
-    // DEBUG:     std.debug.print("mask: {x}; bit_count: {any}; bit_shift: {any}\n", .{ masks[m], bit_counts[m], bit_shifts[m] });
-    // DEBUG: }
+    // DEBUG: std.debug.print("format: {any}\n", .{fmt});
 
     // colors
-    var color_table: [256]RGBA32 = undefined;
+    var color_table: [256]color.RGBA64F = undefined;
+    var color_count: usize = 0;
     if (info_header.compression == .BI_RGB) {
-        const color_count: usize = switch (info_header.bit_count) {
+        color_count = switch (info_header.bit_count) {
             .BI_BITCOUNT_1 => 2,
             .BI_BITCOUNT_2 => 16,
             .BI_BITCOUNT_3 => 256,
@@ -403,11 +461,15 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
 
         var i: u32 = 0;
         while (i < color_count) : (i += 1) {
-            color_table[i].b = try reader.readByte();
-            color_table[i].g = try reader.readByte();
-            color_table[i].r = try reader.readByte();
-            color_table[i].a = 0xFF;
-            _ = try reader.readByte();
+            const col: color.RGBA32 = .{
+                .b = try reader.readByte(), // read little endian
+                .g = try reader.readByte(),
+                .r = try reader.readByte(),
+                .a = 0xFF,
+            };
+            _ = try reader.readByte(); // ignore padding
+
+            color_table[i] = color.RGBA64F.from(color.RGBA32, col);
 
             // DEBUG: std.debug.print("color-table[{any}]: {any}\n", .{ i, color_table[i] });
         }
@@ -420,85 +482,43 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
     const w = @as(u32, @bitCast(info_header.width));
     const h = std.math.absCast(info_header.height);
     const pixel_count = w * h;
-    var storage = try PixelStorageCT_RGBA32.init(pixel_count, allocator);
-    errdefer storage.deinit(allocator);
 
-    const indices_per_byte: u32 = switch (info_header.bit_count) {
-        .BI_BITCOUNT_1 => 8,
-        .BI_BITCOUNT_2 => 2,
-        .BI_BITCOUNT_3 => 1,
-        else => 0,
-    };
-    const index_shift: u32 = switch (info_header.bit_count) {
-        .BI_BITCOUNT_1 => 1,
-        .BI_BITCOUNT_2 => 4,
-        .BI_BITCOUNT_3 => 8,
-        else => 0,
-    };
-    const index_mask: u8 = switch (info_header.bit_count) {
-        .BI_BITCOUNT_1 => 0b00000001,
-        .BI_BITCOUNT_2 => 0b00001111,
-        .BI_BITCOUNT_3 => 0b11111111,
-        else => 0,
-    };
+    var pixel_storage = try PixelStorageRT.init(fmt, pixel_count, allocator);
+    errdefer pixel_storage.deinit(allocator);
+    if (is_indexed) {
+        switch (pixel_storage) {
+            .indexed1 => |s| @memcpy(s.data.palette, color_table[0..(std.math.maxInt(@TypeOf(s.data).Index) + 1)]),
+            .indexed4 => |s| @memcpy(s.data.palette, color_table[0..(std.math.maxInt(@TypeOf(s.data).Index) + 1)]),
+            .indexed8 => |s| @memcpy(s.data.palette, color_table[0..(std.math.maxInt(@TypeOf(s.data).Index) + 1)]),
+            else => unreachable,
+        }
+    }
 
     var byte_count: u32 = 0;
     var yp: u32 = 0;
     while (yp < h) : (yp += 1) {
-        var xp: u32 = 0;
-        xloop: while (xp < w) : (xp += 1) {
-            const x = xp;
-            const y = if (flip_y) yp else h - yp - 1;
-            const idx = x + y * w;
+        const y: u32 = if (flip_y) yp else h - yp - 1;
 
-            if (is_indexed) {
-                // could be "improved" by separating .BI_BITCOUNT_1, .BI_BITCOUNT_shift
-                const buffer = try reader.readByte();
-                byte_count += 1;
-
-                var i: u32 = 0;
-                while (i < indices_per_byte) : (i += 1) {
-                    if (xp >= w) {
-                        xp += i;
-                        continue :xloop;
-                    }
-
-                    const offset = std.math.cast(u3, 8 - index_shift * (i + 1)).?;
-                    const index = (buffer >> offset) & index_mask;
-                    storage.data[idx + i] = color_table[index];
-
-                    // DEBUG: std.debug.print("({any},{any}) : [{any}] {any}\n", .{ xp + i, yp, index, storage.data[idx + i] });
-                }
-
-                xp += indices_per_byte - 1;
-            } else {
-                var buffer: u32 = undefined;
-                switch (info_header.bit_count) {
-                    .BI_BITCOUNT_4 => {
-                        buffer = try reader.readInt(u16, Endian.Little); // this is unfortunatly just a conjecture...
-                        byte_count += 2;
-                    },
-                    .BI_BITCOUNT_5 => {
-                        buffer = try reader.readInt(u24, Endian.Big);
-                        buffer = buffer << 8;
-                        byte_count += 3;
-                    },
-                    .BI_BITCOUNT_6 => {
-                        buffer = try reader.readInt(u32, Endian.Big);
-                        byte_count += 4;
-                    },
-                    else => unreachable,
-                }
-
-                storage.data[idx].r = extract(buffer, masks[R], bit_counts[R], bit_shifts[R]);
-                storage.data[idx].g = extract(buffer, masks[G], bit_counts[G], bit_shifts[G]);
-                storage.data[idx].b = extract(buffer, masks[B], bit_counts[B], bit_shifts[B]);
-                if (masks[A] != 0) {
-                    storage.data[idx].a = extract(buffer, masks[A], bit_counts[A], bit_shifts[A]);
-                } else {
-                    storage.data[idx].a = 0xFF;
-                }
-            }
+        switch (pixel_storage) {
+            .indexed1 => |*s| byte_count += try extractRowIndexed(reader, @TypeOf(s.data), &s.data, w, y),
+            .indexed4 => |*s| byte_count += try extractRowIndexed(reader, @TypeOf(s.data), &s.data, w, y),
+            .indexed8 => |*s| byte_count += try extractRowIndexed(reader, @TypeOf(s.data), &s.data, w, y),
+            .rgba32 => |*s| byte_count += try extractRow(reader, PixelFormat.rgba32.ColorType(), s.data, w, y, 0),
+            .bgra32 => |*s| byte_count += try extractRow(reader, PixelFormat.bgra32.ColorType(), s.data, w, y, 0),
+            .argb32 => |*s| byte_count += try extractRow(reader, PixelFormat.argb32.ColorType(), s.data, w, y, 0),
+            .abgr32 => |*s| byte_count += try extractRow(reader, PixelFormat.abgr32.ColorType(), s.data, w, y, 0),
+            .rgb24 => |*s| {
+                const padding: u32 = if (info_header.bit_count == .BI_BITCOUNT_6) 1 else 0;
+                byte_count += try extractRow(reader, PixelFormat.rgb24.ColorType(), s.data, w, y, padding);
+            },
+            .argb4444 => |*s| byte_count += try extractRow(reader, PixelFormat.argb4444.ColorType(), s.data, w, y, 0),
+            .argb1555 => |*s| byte_count += try extractRow(reader, PixelFormat.argb1555.ColorType(), s.data, w, y, 0),
+            .rgb565 => |*s| byte_count += try extractRow(reader, PixelFormat.rgb565.ColorType(), s.data, w, y, 0),
+            .rgb555 => |*s| byte_count += try extractRow(reader, PixelFormat.rgb555.ColorType(), s.data, w, y, 0),
+            .a2r10g10b10 => |*s| byte_count += try extractRow(reader, PixelFormat.a2r10g10b10.ColorType(), s.data, w, y, 0),
+            .a2b10g10r10 => |*s| byte_count += try extractRow(reader, PixelFormat.a2b10g10r10.ColorType(), s.data, w, y, 0),
+            .rgba32f => |*s| byte_count += try extractRow(reader, PixelFormat.rgba32f.ColorType(), s.data, w, y, 0),
+            else => unreachable,
         }
 
         // padding
@@ -507,31 +527,82 @@ pub fn init(allocator: Allocator, stream: *StreamSource) !ImageRT {
         }
     }
 
-    return .{ .allocator = allocator, .width = w, .height = h, .pixels = .{ .rgba32 = storage } };
+    return .{ .allocator = allocator, .width = w, .height = h, .pixels = pixel_storage };
 }
 
-fn extract(buffer: u32, mask: u32, bit_count: u5, bit_shift: u5) u8 {
-    const RST_BIT_COUNT = @bitSizeOf(u8);
+fn extractRowIndexed(reader: anytype, comptime IndexedStorage: type, indexed_storage: *IndexedStorage, w: u32, y: u32) !u32 {
+    const indices_per_byte = @bitSizeOf(u8) / @bitSizeOf(IndexedStorage.Index);
+    const index_shift = @bitSizeOf(IndexedStorage.Index);
+    const index_mask = std.math.maxInt(IndexedStorage.Index);
 
-    const tmp = (buffer & mask) >> bit_shift;
-    const rst = if (bit_count < RST_BIT_COUNT) blk: {
-        break :blk switch (bit_count) {
-            1 => @as(u32, if (tmp == 0) 0x00 else 0xFF),
-            2 => tmp << 6 | tmp << 4 | tmp << 2 | tmp,
-            3 => tmp << 5 | tmp << 2 | tmp >> 1,
-            else => blk_inner: {
-                const bit_diff = RST_BIT_COUNT - bit_count;
-                break :blk_inner (tmp << bit_diff) | (tmp >> (bit_count - bit_diff));
-            },
-        };
-    } else if (bit_count > RST_BIT_COUNT) blk: {
-        const bit_diff = bit_count - RST_BIT_COUNT;
-        break :blk tmp >> bit_diff;
-    } else tmp;
+    var byte_count: u32 = 0;
 
-    // DEBUG: std.debug.print("extract: {x}, {x}, {any}, {any}, {any}, {any}\n", .{ buffer, mask, bit_count, bit_shift, tmp, rst });
+    var x: u32 = 0;
+    xloop: while (x < w) : (x += 1) {
+        const base_idx = x + y * w;
 
-    return std.math.cast(u8, rst).?;
+        // could be "improved" by separating .BI_BITCOUNT_1, .BI_BITCOUNT_shift
+        const buffer = try reader.readByte();
+        byte_count += 1;
+
+        var i: u32 = 0;
+        while (i < indices_per_byte) : (i += 1) {
+            if (x >= w) {
+                x += i;
+                break :xloop;
+            }
+
+            const offset = std.math.cast(u3, 8 - index_shift * (i + 1)).?;
+            const index = std.math.cast(IndexedStorage.Index, (buffer >> offset) & index_mask).?;
+            indexed_storage.indices[base_idx + i] = index;
+
+            // DEBUG: std.debug.print("({any},{any}) : [{any}] {any}\n", .{ x + i, y, index, indexed_storage.at(base_idx + i) catch unreachable });
+        }
+
+        x += indices_per_byte - 1;
+    }
+
+    return byte_count;
+}
+
+fn extractRow(reader: anytype, comptime Color: type, data: []Color, w: u32, y: u32, padding: u32) !u32 {
+    var byte_count: u32 = 0;
+
+    const bit_size = @bitSizeOf(Color);
+    const bytes_per_color = bit_size / 8 + if (bit_size % 8 != 0) 1 else 0;
+    const Repr = switch (bytes_per_color) {
+        1 => u8,
+        2 => u16,
+        3 => u24,
+        4 => u32,
+        else => unreachable,
+    };
+
+    var x: u32 = 0;
+    while (x < w) : (x += 1) { // TODO: IMPROVE: it is sometimes possible to direct memcpy the rows (sometimes also possible for whole data)
+        const idx = x + y * w;
+
+        const buffer = try reader.readInt(Repr, Endian.Little);
+        try reader.skipBytes(padding, .{});
+        byte_count += bytes_per_color + padding;
+
+        if (Color == color.RGB555) {
+            std.debug.assert(Repr == u16);
+            data[idx].r = std.math.cast(u5, ((buffer >> 10) & 0b11111)).?;
+            data[idx].g = std.math.cast(u5, ((buffer >> 5) & 0b11111)).?;
+            data[idx].b = std.math.cast(u5, ((buffer >> 0) & 0b11111)).?;
+        } else {
+            // TODO: TEST: is 'buffer = @byteSwap(buffer)' necessary on platforms with Endian.Big ?
+            @memcpy(
+                @as(*[bytes_per_color]u8, @ptrCast(&data[idx])),
+                @as(*const [bytes_per_color]u8, @ptrCast(&buffer)),
+            );
+        }
+
+        // DEBUG: std.debug.print("({any},{any}) : {any}\n", .{ x, y, data[idx] });
+    }
+
+    return byte_count;
 }
 
 // ########################################################################################
@@ -577,15 +648,15 @@ fn readStructBitmapInfoHeader(reader: anytype) !BitmapInfoHeader {
 
 fn readStructBitmapV2Header(reader: anytype) !BitmapV2Header {
     return BitmapV2Header{
-        .red_mask = try reader.readInt(u32, Endian.Big),
-        .green_mask = try reader.readInt(u32, Endian.Big),
-        .blue_mask = try reader.readInt(u32, Endian.Big),
+        .red_mask = try reader.readInt(u32, Endian.Little),
+        .green_mask = try reader.readInt(u32, Endian.Little),
+        .blue_mask = try reader.readInt(u32, Endian.Little),
     };
 }
 
 fn readStructBitmapV3Header(reader: anytype) !BitmapV3Header {
     return BitmapV3Header{
-        .alpha_mask = try reader.readInt(u32, Endian.Big),
+        .alpha_mask = try reader.readInt(u32, Endian.Little),
     };
 }
 

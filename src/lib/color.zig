@@ -7,10 +7,10 @@ pub const RGBA64 = RGBA(u16);
 
 pub fn RGBA(comptime T: type) type {
     return packed struct {
-        r: T,
-        g: T,
-        b: T,
         a: T,
+        b: T,
+        g: T,
+        r: T,
 
         pub usingnamespace RGBAFunctionality(@This(), T, T, T, T);
     };
@@ -20,10 +20,10 @@ pub const BGRA32 = BGRA(u8);
 
 pub fn BGRA(comptime T: type) type {
     return packed struct {
-        b: T,
-        g: T,
-        r: T,
         a: T,
+        r: T,
+        g: T,
+        b: T,
 
         pub usingnamespace RGBAFunctionality(@This(), T, T, T, T);
     };
@@ -36,10 +36,10 @@ pub const A2R10G10B10 = ARGB(u2, u10);
 
 pub fn ARGB(comptime A: type, comptime T: type) type {
     return packed struct {
-        a: A,
-        r: T,
-        g: T,
         b: T,
+        g: T,
+        r: T,
+        a: A,
 
         pub usingnamespace RGBAFunctionality(@This(), T, T, T, A);
     };
@@ -50,10 +50,10 @@ pub const A2B10G10R10 = ABGR(u2, u10);
 
 pub fn ABGR(comptime A: type, comptime T: type) type {
     return packed struct {
-        a: A,
-        b: T,
-        g: T,
         r: T,
+        g: T,
+        b: T,
+        a: A,
 
         pub usingnamespace RGBAFunctionality(@This(), T, T, T, A);
     };
@@ -66,9 +66,9 @@ pub const RGB555 = RGB(u5, u5, u5);
 
 pub fn RGB(comptime R: type, comptime G: type, comptime B: type) type {
     return packed struct {
-        r: R,
-        g: G,
         b: B,
+        g: G,
+        r: R,
 
         pub usingnamespace RGBFunctionality(@This(), R, G, B);
     };
@@ -78,9 +78,9 @@ pub const BGR24 = BGR(u8);
 
 pub fn BGR(comptime T: type) type {
     return packed struct {
-        b: T,
-        g: T,
         r: T,
+        g: T,
+        b: T,
 
         pub usingnamespace RGBFunctionality(@This(), T, T, T);
     };
@@ -365,8 +365,17 @@ fn fromChannel(comptime To: type, comptime Container: type, container: Container
     if (type_info_from == .Int and type_info_to == .Int) {
         const bits_from = type_info_from.Int.bits;
         const bits_to = type_info_to.Int.bits;
-        if (bits_from < bits_to)
-            return std.math.shl(To, std.math.cast(To, from).?, bits_to - bits_from);
+        if (bits_from < bits_to) {
+            const cast = std.math.cast(To, from).?;
+            comptime var bits_to_fill = bits_to;
+            var result: To = 0;
+            inline while (bits_to_fill >= bits_from) {
+                bits_to_fill -= bits_from;
+                result |= std.math.shl(To, cast, bits_to_fill);
+            }
+            result |= std.math.shr(To, cast, bits_from - bits_to_fill);
+            return result;
+        }
         if (bits_from > bits_to)
             return std.math.cast(To, std.math.shr(From, from, bits_from - bits_to)).?;
         if (bits_from == bits_to)

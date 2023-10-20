@@ -115,7 +115,7 @@ pub const Format = enum {
         };
     }
 
-    fn ColorType(comptime self: Self) type {
+    pub fn ColorType(comptime self: Self) type {
         return switch (self) {
             .indexed1 => self.StorageType().Color,
             .indexed4 => self.StorageType().Color,

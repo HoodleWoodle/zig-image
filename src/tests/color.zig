@@ -3,7 +3,7 @@ const zimg = @import("../lib/zig-image.zig");
 const color = zimg.color;
 
 // TODO: TEST: color
-test "example:" {
+test "exampleColor:" {
     std.debug.print("\n-\n", .{});
     {
         const v0 = color.RGB24.init(2, 3, 4);
