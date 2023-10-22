@@ -5,8 +5,8 @@ const PixelFormat = zimg.PixelFormat;
 const PixelStorageCT = zimg.PixelStorageCT;
 const PixelStorage = zimg.PixelStorage;
 
-// TODO: TEST: storage
-test "example:" {
+// TODO: TEST: storageCT
+test "exampleCT:" {
     const PixelStorageRGB555 = PixelStorageCT(PixelFormat.rgb555);
     const PixelStorageBGRA32 = PixelStorageCT(PixelFormat.bgra32);
     const PixelStorageIndexed4 = PixelStorageCT(PixelFormat.indexed4);

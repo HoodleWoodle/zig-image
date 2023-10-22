@@ -28,8 +28,8 @@ This library assumes Zig v0.11.0.
 | Compression Format  | Supported     | Implemented    |
 | ------------------- |:-------------:|:--------------:|
 | BI_RGB              | ✔️            | ✔️             |
-| BI_RLE8             | ✔️            |                |
-| BI_RLE4             | ✔️            |                |
+| BI_RLE8             | ❌            |                |
+| BI_RLE4             | ❌            |                |
 | BI_BITFIELDS        | ✔️            | ✔️             |
 | BI_JPEG             | ❌            |                |
 | BI_PNG              | ❌            |                |
