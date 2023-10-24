@@ -1,6 +1,8 @@
 const std = @import("std");
 const StreamSource = std.io.StreamSource;
-const Image = @import("lib/zig-image.zig").ImageCT(.rgb24);
+const zimg = @import("lib/zig-image.zig");
+const RGB24 = zimg.color.RGB24;
+const Image = zimg.ImageCT(.rgb24);
 const ansi = @import("ansi.zig");
 const select = @import("selection.zig");
 
@@ -38,9 +40,11 @@ fn show(image: Image, align_horizontally: bool) !void {
     const writer = std.io.getStdOut().writer();
 
     try ansi.clearScreen(writer);
+    const BLACK = RGB24.init(0, 0, 0);
+    try ansi.setBackgroundColor(writer, BLACK);
 
-    const X_GAP = 4;
-    const Y_GAP = 1;
+    const X_GAP = 5;
+    const Y_GAP = 2;
 
     const x_grid_increase_primary: u32 = if (align_horizontally) 1 else 0;
     const y_grid_increase_primary: u32 = if (align_horizontally) 0 else 1;
@@ -79,6 +83,8 @@ fn show(image: Image, align_horizontally: bool) !void {
     x_grid += x_grid_increase_primary;
     y_grid += y_grid_increase_primary;
     try show_at(writer, image, x_grid * (image.width + X_GAP), y_grid * (image.height + Y_GAP), select.byB_ASCII);
+
+    try ansi.resetColors(writer);
 }
 
 fn readImageFromFile(relative_path: []const u8, allocator: std.mem.Allocator) !Image {

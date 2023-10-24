@@ -8,6 +8,7 @@ pub const CHAR_DARK_SHADE = "\u{2593}";
 const ESC = "\x1B";
 const CSI = ESC ++ "[";
 
+var color_background: ?RGB24 = null;
 var color_foreground: ?RGB24 = null;
 
 pub fn clearScreen(writer: anytype) !void {
@@ -18,6 +19,15 @@ pub fn setCursor(writer: anytype, x: usize, y: usize) !void {
     try writer.print(CSI ++ "{};{}H", .{ y + 1, x + 1 });
 }
 
+pub fn setBackgroundColor(writer: anytype, color: RGB24) !void {
+    if (color_background) |background| {
+        if (color.eql(background)) return;
+    }
+    color_background = color;
+
+    try writer.print(CSI ++ "48;2;{};{};{}m", .{ color.r, color.g, color.b });
+}
+
 pub fn setForegroundColor(writer: anytype, color: RGB24) !void {
     if (color_foreground) |foreground| {
         if (color.eql(foreground)) return;
@@ -25,4 +35,8 @@ pub fn setForegroundColor(writer: anytype, color: RGB24) !void {
     color_foreground = color;
 
     try writer.print(CSI ++ "38;2;{};{};{}m", .{ color.r, color.g, color.b });
+}
+
+pub fn resetColors(writer: anytype) !void {
+    try writer.print(CSI ++ "0m", .{});
 }
