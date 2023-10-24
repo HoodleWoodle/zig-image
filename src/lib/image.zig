@@ -18,6 +18,8 @@ pub const Error = std.mem.Allocator.Error ||
     storage.StorageError ||
     png.Error || bmp.Error;
 
+pub const Format = enum { BMP, PNG };
+
 pub fn ImageCT(comptime format: PixelFormat) type {
     return struct {
         const Self = @This();
@@ -27,21 +29,44 @@ pub fn ImageCT(comptime format: PixelFormat) type {
         allocator: Allocator,
         width: u32,
         height: u32,
-        pixels: Storage,
+        storage: Storage,
 
-        pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
-            const image_rt = try ImageRT.init(allocator, stream);
+        pub fn init(allocator: Allocator, width: u32, height: u32) Error!Self {
+            return .{
+                .allocator = allocator,
+                .width = width,
+                .height = height,
+                .storage = try Storage.init(width * height, allocator),
+            };
+        }
+
+        pub fn initRead(allocator: Allocator, stream: *StreamSource) Error!Self {
+            const image_rt = try ImageRT.init_read(allocator, stream);
             defer image_rt.deinit();
             return .{
                 .allocator = allocator,
                 .width = image_rt.width,
                 .height = image_rt.height,
-                .pixels = try Storage.fromRT(image_rt.pixels, allocator),
+                .storage = try Storage.initFromRT(image_rt.storage, allocator),
+            };
+        }
+
+        pub fn write(self: Self, fmt: Format, writer: anytype) !void {
+            const image_rt = .{
+                .allocator = self.allocator,
+                .width = self.width,
+                .height = self.height,
+                .storage = PixelStorageRT.initFromCTWrapped(format, self.storage),
+            };
+            // since it is just wrapping 'self' - there is not need for 'image_rt.deinit()'
+            return switch (fmt) {
+                .BMP => bmp.write(image_rt, writer),
+                .PNG => png.write(image_rt, writer),
             };
         }
 
         pub fn deinit(self: *const Self) void {
-            self.pixels.deinit(self.allocator);
+            self.storage.deinit(self.allocator);
         }
     };
 }
@@ -52,26 +77,50 @@ pub const ImageRT = struct {
     allocator: Allocator,
     width: u32,
     height: u32,
-    pixels: PixelStorageRT,
+    storage: PixelStorageRT,
 
-    pub fn init(allocator: Allocator, stream: *StreamSource) Error!Self {
-        if (try png.is_format(stream)) {
-            try stream.seekTo(0);
-            return png.init(allocator, stream);
-        }
+    pub fn init(allocator: Allocator, pixel_fmt: PixelFormat, width: u32, height: u32) Error!Self {
+        const pixel_count = width * height;
+        return .{
+            .allocator = allocator,
+            .width = width,
+            .height = height,
+            .storage = try PixelStorageRT.init(pixel_fmt, pixel_count, allocator),
+        };
+    }
+
+    pub fn initRead(allocator: Allocator, stream: *StreamSource) Error!Self {
+        const fmt = try detectFormat(stream);
         try stream.seekTo(0);
-        if (try bmp.is_format(stream)) {
-            try stream.seekTo(0);
-            return bmp.init(allocator, stream);
-        }
-        try stream.seekTo(0);
-        if (try ico.is_format(stream)) {
-            return Error.FormatNotSupported;
-        }
-        return Error.FormatUnkown;
+        return switch (fmt) {
+            .BMP => bmp.read(allocator, stream),
+            .PNG => png.read(allocator, stream),
+        };
+    }
+
+    pub fn write(self: Self, fmt: Format, writer: anytype) !void {
+        return switch (fmt) {
+            .BMP => bmp.write(self, writer),
+            .PNG => png.write(self, writer),
+        };
     }
 
     pub fn deinit(self: *const Self) void {
-        self.pixels.deinit(self.allocator);
+        self.storage.deinit(self.allocator);
     }
 };
+
+pub fn detectFormat(stream: *StreamSource) Error!Format {
+    if (try png.isFormat(stream)) {
+        return .PNG;
+    }
+    try stream.seekTo(0);
+    if (try bmp.isFormat(stream)) {
+        return .BMP;
+    }
+    try stream.seekTo(0);
+    if (try ico.isFormat(stream)) {
+        return Error.FormatNotSupported;
+    }
+    return Error.FormatUnkown;
+}

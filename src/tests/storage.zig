@@ -11,7 +11,7 @@ test "exampleCT:" {
     const PixelStorageBGRA32 = PixelStorageCT(PixelFormat.bgra32);
     const PixelStorageIndexed4 = PixelStorageCT(PixelFormat.indexed4);
     const PixelStorageGrayscale1 = PixelStorageCT(PixelFormat.grayscale1);
-    const PixelStorageRGBA32F = PixelStorageCT(PixelFormat.rgba32f);
+    const PixelStorageRGBA128f = PixelStorageCT(PixelFormat.rgba128f);
     const PixelStorageIndexed1 = PixelStorageCT(PixelFormat.indexed1);
 
     std.debug.print("----------------------------------\n", .{});
@@ -27,17 +27,17 @@ test "exampleCT:" {
         tmpPrintPixels(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageBGRA32.from(PixelFormat.rgb555, s, std.testing.allocator);
+        const s2 = try PixelStorageBGRA32.initFrom(PixelFormat.rgb555, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixels(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageIndexed4.from(PixelFormat.bgra32, s2, std.testing.allocator);
+        const s3 = try PixelStorageIndexed4.initFrom(PixelFormat.bgra32, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixels(s3);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s4 = try PixelStorageGrayscale1.fromLossy(PixelFormat.indexed4, s3, std.testing.allocator);
+        const s4 = try PixelStorageGrayscale1.initFromLossy(PixelFormat.indexed4, s3, std.testing.allocator);
         defer s4.deinit(std.testing.allocator);
         tmpPrintPixels(s4);
     }
@@ -54,12 +54,12 @@ test "exampleCT:" {
         tmpPrintPixels(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorageRGBA32F.from(PixelFormat.grayscale1, s, std.testing.allocator);
+        const s2 = try PixelStorageRGBA128f.initFrom(PixelFormat.grayscale1, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixels(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorageIndexed1.from(PixelFormat.rgba32f, s2, std.testing.allocator);
+        const s3 = try PixelStorageIndexed1.initFrom(PixelFormat.rgba128f, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixels(s3);
     }
@@ -93,17 +93,17 @@ test "exampleRT:" {
         tmpPrintPixelsRT(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorage.from(PixelFormat.bgra32, s, std.testing.allocator);
+        const s2 = try PixelStorage.initFrom(PixelFormat.bgra32, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorage.from(PixelFormat.indexed4, s2, std.testing.allocator);
+        const s3 = try PixelStorage.initFrom(PixelFormat.indexed4, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s3);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s4 = try PixelStorage.from(PixelFormat.grayscale1, s3, std.testing.allocator);
+        const s4 = try PixelStorage.initFrom(PixelFormat.grayscale1, s3, std.testing.allocator);
         defer s4.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s4);
     }
@@ -120,12 +120,12 @@ test "exampleRT:" {
         tmpPrintPixelsRT(s);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s2 = try PixelStorage.from(PixelFormat.rgba32f, s, std.testing.allocator);
+        const s2 = try PixelStorage.initFrom(PixelFormat.rgba128f, s, std.testing.allocator);
         defer s2.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s2);
 
         std.debug.print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", .{});
-        const s3 = try PixelStorage.from(PixelFormat.indexed1, s2, std.testing.allocator);
+        const s3 = try PixelStorage.initFrom(PixelFormat.indexed1, s2, std.testing.allocator);
         defer s3.deinit(std.testing.allocator);
         tmpPrintPixelsRT(s3);
     }
@@ -135,8 +135,7 @@ pub fn tmpPrintPixelsRT(s: PixelStorage) void {
     var i: u32 = 0;
     while (i < s.len()) : (i += 1) {
         switch (s) {
-            .rgba64f => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
-            .rgba32f => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
+            .rgba128f => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .rgba64 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .rgba32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
             .bgra32 => |data| std.debug.print("{any}\n", .{data.at(i) catch unreachable}),
