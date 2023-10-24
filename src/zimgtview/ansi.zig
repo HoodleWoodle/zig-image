@@ -1,4 +1,4 @@
-const RGB24 = @import("lib/zig-image.zig").color.RGB24;
+const RGB24 = @import("../lib/zig-image.zig").color.RGB24;
 
 pub const CHAR_BLOCK_FULL = "\u{2588}";
 pub const CHAR_LIGHT_SHADE = "\u{2591}";

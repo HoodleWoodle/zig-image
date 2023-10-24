@@ -4,4 +4,4 @@ This is a terminal image viewer writting with [Zig](https://ziglang.org/) progra
 
 ## Preview
 
-![preview](preview.png)
+![preview](zimgtview-preview.png)

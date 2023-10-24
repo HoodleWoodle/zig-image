@@ -1,4 +1,4 @@
-const RGB24 = @import("lib/zig-image.zig").color.RGB24;
+const RGB24 = @import("../lib/zig-image.zig").color.RGB24;
 const ansi = @import("ansi.zig");
 const mapping = @import("mapping.zig");
 
