@@ -1,4 +1,6 @@
-pub const Image = @import("lib/image.zig");
+pub fn main() !void {
+    try @import("zimgtview/zimgtview.zig").run();
+}
 
 test {
     const std = @import("std");
