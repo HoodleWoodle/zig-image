@@ -28,7 +28,7 @@ fn readBufferFromFile(relative_path: []const u8) ![]const u8 {
 
 fn readTestImageFromBuffer(comptime Image: type, expected_format: ?PixelFormat, buffer: []const u8) !Image {
     var stream = StreamSource{ .const_buffer = std.io.fixedBufferStream(buffer) };
-    const image_rt = try ImageRT.init_read(std.testing.allocator, &stream);
+    const image_rt = try ImageRT.initRead(std.testing.allocator, &stream);
 
     if (expected_format) |expected| {
         try std.testing.expect(image_rt.storage.format() == expected);
@@ -40,7 +40,7 @@ fn readTestImageFromBuffer(comptime Image: type, expected_format: ?PixelFormat, 
             .allocator = image_rt.allocator,
             .width = image_rt.width,
             .height = image_rt.height,
-            .storage = try ImageCT.Storage.fromRT(image_rt.storage, image_rt.allocator),
+            .storage = try ImageCT.Storage.initFromRT(image_rt.storage, image_rt.allocator),
         };
     } else {
         return image_rt;

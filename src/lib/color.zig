@@ -1,7 +1,6 @@
 const std = @import("std");
 
-pub const RGBA32F = RGBA(f32);
-pub const RGBA64F = RGBA(f64);
+pub const RGBA128f = RGBA(f32);
 pub const RGBA32 = RGBA(u8);
 pub const RGBA64 = RGBA(u16);
 

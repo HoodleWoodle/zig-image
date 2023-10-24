@@ -1,5 +1,3 @@
-const tests = @import("../common.zig");
-
 test "reading simple PNG image" { // "images/test-1x1.png"
     return error.SkipZigTest;
 }

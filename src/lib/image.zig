@@ -40,14 +40,14 @@ pub fn ImageCT(comptime format: PixelFormat) type {
             };
         }
 
-        pub fn init_read(allocator: Allocator, stream: *StreamSource) Error!Self {
+        pub fn initRead(allocator: Allocator, stream: *StreamSource) Error!Self {
             const image_rt = try ImageRT.init_read(allocator, stream);
             defer image_rt.deinit();
             return .{
                 .allocator = allocator,
                 .width = image_rt.width,
                 .height = image_rt.height,
-                .storage = try Storage.fromRT(image_rt.storage, allocator),
+                .storage = try Storage.initFromRT(image_rt.storage, allocator),
             };
         }
 
@@ -56,7 +56,7 @@ pub fn ImageCT(comptime format: PixelFormat) type {
                 .allocator = self.allocator,
                 .width = self.width,
                 .height = self.height,
-                .storage = PixelStorageRT.fromCTWrapped(format, self.storage),
+                .storage = PixelStorageRT.initFromCTWrapped(format, self.storage),
             };
             // since it is just wrapping 'self' - there is not need for 'image_rt.deinit()'
             return switch (fmt) {
@@ -89,7 +89,7 @@ pub const ImageRT = struct {
         };
     }
 
-    pub fn init_read(allocator: Allocator, stream: *StreamSource) Error!Self {
+    pub fn initRead(allocator: Allocator, stream: *StreamSource) Error!Self {
         const fmt = try detectFormat(stream);
         try stream.seekTo(0);
         return switch (fmt) {
@@ -111,15 +111,15 @@ pub const ImageRT = struct {
 };
 
 pub fn detectFormat(stream: *StreamSource) Error!Format {
-    if (try png.is_format(stream)) {
+    if (try png.isFormat(stream)) {
         return .PNG;
     }
     try stream.seekTo(0);
-    if (try bmp.is_format(stream)) {
+    if (try bmp.isFormat(stream)) {
         return .BMP;
     }
     try stream.seekTo(0);
-    if (try ico.is_format(stream)) {
+    if (try ico.isFormat(stream)) {
         return Error.FormatNotSupported;
     }
     return Error.FormatUnkown;

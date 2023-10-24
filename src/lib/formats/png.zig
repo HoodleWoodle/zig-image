@@ -6,14 +6,14 @@ const ImageRT = @import("../image.zig").ImageRT;
 
 pub const Error = error{PNGNotImplemented};
 
-const file_signature = [_]u8{ 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+const FILE_SIGNATURE = [_]u8{ 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 
-pub fn is_format(stream: *StreamSource) !bool {
-    return stream.reader().isBytes(&file_signature);
+pub fn isFormat(stream: *StreamSource) !bool {
+    return stream.reader().isBytes(&FILE_SIGNATURE);
 }
 
 pub fn read(allocator: Allocator, stream: *StreamSource) !ImageRT {
-    if (!try is_format(stream)) {
+    if (!try isFormat(stream)) {
         unreachable;
     }
 
